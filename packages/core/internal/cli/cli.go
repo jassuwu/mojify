@@ -17,6 +17,7 @@ const (
 type Command struct {
 	Kind      CommandKind
 	InputPath string
+	Stats     bool
 }
 
 func Parse(args []string) (Command, error) {
@@ -42,9 +43,9 @@ func HelpText() string {
 Terminal-first video playback with colored, edge-aware character frames.
 
 Usage:
-  mojify play <video>    Play a local video file in the terminal
-  mojify probe <video>   Print media and render metadata
-  mojify --help          Show this help
+  mojify play [--stats] <video>  Play a local video file in the terminal
+  mojify probe <video>           Print media and render metadata
+  mojify --help                  Show this help
 
 Requirements:
   FFmpeg and ffprobe must be available on PATH for v1.
@@ -55,13 +56,33 @@ func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 	if len(args) < 2 {
 		return Command{}, fmt.Errorf("%s requires a video input", args[0])
 	}
-	if len(args) > 2 {
-		return Command{}, fmt.Errorf("%s accepts exactly one video input", args[0])
+
+	var inputPath string
+	stats := false
+	for _, arg := range args[1:] {
+		switch arg {
+		case "--stats":
+			if kind != PlayCommand {
+				return Command{}, fmt.Errorf("%s does not accept --stats", args[0])
+			}
+			if stats {
+				return Command{}, fmt.Errorf("%s accepts --stats only once", args[0])
+			}
+			stats = true
+		default:
+			if inputPath != "" {
+				return Command{}, fmt.Errorf("%s accepts exactly one video input", args[0])
+			}
+			inputPath = arg
+		}
 	}
-	if hasProtocolInput(args[1]) {
+	if inputPath == "" {
+		return Command{}, fmt.Errorf("%s requires a video input", args[0])
+	}
+	if hasProtocolInput(inputPath) {
 		return Command{}, fmt.Errorf("%s accepts local video file paths only", args[0])
 	}
-	return Command{Kind: kind, InputPath: args[1]}, nil
+	return Command{Kind: kind, InputPath: inputPath, Stats: stats}, nil
 }
 
 func hasProtocolInput(input string) bool {

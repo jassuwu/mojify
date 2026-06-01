@@ -25,6 +25,49 @@ func TestParsePlayCommand(t *testing.T) {
 	}
 }
 
+func TestParsePlayStatsBeforeInput(t *testing.T) {
+	cmd, err := Parse([]string{"play", "--stats", "clip.mp4"})
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+	if cmd.Kind != PlayCommand {
+		t.Fatalf("Kind = %v, want %v", cmd.Kind, PlayCommand)
+	}
+	if cmd.InputPath != "clip.mp4" {
+		t.Fatalf("InputPath = %q, want clip.mp4", cmd.InputPath)
+	}
+	if !cmd.Stats {
+		t.Fatal("Stats = false, want true")
+	}
+}
+
+func TestParsePlayStatsAfterInput(t *testing.T) {
+	cmd, err := Parse([]string{"play", "clip.mp4", "--stats"})
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+	if cmd.InputPath != "clip.mp4" {
+		t.Fatalf("InputPath = %q, want clip.mp4", cmd.InputPath)
+	}
+	if !cmd.Stats {
+		t.Fatal("Stats = false, want true")
+	}
+}
+
+func TestParseRejectsStatsForProbe(t *testing.T) {
+	_, err := Parse([]string{"probe", "--stats", "clip.mp4"})
+	if err == nil {
+		t.Fatal("Parse returned nil error for probe --stats")
+	}
+}
+
+func TestParseRejectsDuplicateStats(t *testing.T) {
+	_, err := Parse([]string{"play", "--stats", "clip.mp4", "--stats"})
+	if err == nil {
+		t.Fatal("Parse returned nil error for duplicate --stats")
+	}
+}
+
 func TestParseProbeCommand(t *testing.T) {
 	cmd, err := Parse([]string{"probe", "clip.mp4"})
 	if err != nil {
@@ -62,7 +105,7 @@ func TestParseRejectsProtocolInputs(t *testing.T) {
 func TestHelpTextMentionsCommands(t *testing.T) {
 	help := HelpText()
 	for _, want := range []string{
-		"mojify play <video>",
+		"mojify play [--stats] <video>",
 		"Play a local video file in the terminal",
 		"mojify probe <video>",
 		"Print media and render metadata",

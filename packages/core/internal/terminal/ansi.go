@@ -8,13 +8,15 @@ import (
 )
 
 const (
-	EnterAltScreen = "\x1b[?1049h"
-	ExitAltScreen  = "\x1b[?1049l"
-	HideCursor     = "\x1b[?25l"
-	ShowCursor     = "\x1b[?25h"
-	CursorHome     = "\x1b[H"
-	ClearToEnd     = "\x1b[J"
-	Reset          = "\x1b[0m"
+	EnterAltScreen          = "\x1b[?1049h"
+	ExitAltScreen           = "\x1b[?1049l"
+	HideCursor              = "\x1b[?25l"
+	ShowCursor              = "\x1b[?25h"
+	CursorHome              = "\x1b[H"
+	ClearToEnd              = "\x1b[J"
+	BeginSynchronizedUpdate = "\x1b[?2026h"
+	EndSynchronizedUpdate   = "\x1b[?2026l"
+	Reset                   = "\x1b[0m"
 )
 
 func SerializeFrame(frame render.CharacterFrame) string {

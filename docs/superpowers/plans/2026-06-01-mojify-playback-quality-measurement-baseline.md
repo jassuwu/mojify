@@ -45,7 +45,7 @@
 - Modify: `packages/core/internal/cli/cli.go`
 - Modify: `packages/core/internal/cli/cli_test.go`
 
-- [ ] **Step 1: Add failing CLI parse tests**
+- [x] **Step 1: Add failing CLI parse tests**
 
 Add these tests to `packages/core/internal/cli/cli_test.go` after `TestParsePlayCommand`:
 
@@ -94,7 +94,7 @@ func TestParseRejectsDuplicateStats(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run:
 
@@ -109,7 +109,7 @@ FAIL
 packages/core/internal/cli/cli_test.go:...: cmd.Stats undefined
 ```
 
-- [ ] **Step 3: Implement stats parsing**
+- [x] **Step 3: Implement stats parsing**
 
 Modify `packages/core/internal/cli/cli.go` so `Command` and `parseInputCommand` become:
 
@@ -165,7 +165,7 @@ Usage:
   mojify --help                  Show this help
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
@@ -180,7 +180,7 @@ Expected:
 ok  	github.com/jass/mojify/packages/core/internal/cli
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/internal/cli/cli.go packages/core/internal/cli/cli_test.go
@@ -195,7 +195,7 @@ git commit -m "feat: parse playback stats flag"
 - Create: `packages/core/internal/playback/metrics.go`
 - Create: `packages/core/internal/playback/metrics_test.go`
 
-- [ ] **Step 1: Write failing metrics tests**
+- [x] **Step 1: Write failing metrics tests**
 
 Create `packages/core/internal/playback/metrics_test.go`:
 
@@ -274,7 +274,7 @@ func TestMetricsSummaryContainsHumanReadableFields(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify failure**
+- [x] **Step 2: Run tests to verify failure**
 
 Run:
 
@@ -289,7 +289,7 @@ FAIL
 package github.com/jass/mojify/packages/core/internal/playback is not in std
 ```
 
-- [ ] **Step 3: Implement metrics collector**
+- [x] **Step 3: Implement metrics collector**
 
 Create `packages/core/internal/playback/metrics.go`:
 
@@ -435,7 +435,7 @@ func (m *Metrics) Summary() string {
 }
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run:
 
@@ -450,7 +450,7 @@ Expected:
 ok  	github.com/jass/mojify/packages/core/internal/playback
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/internal/playback
@@ -470,7 +470,7 @@ git commit -m "feat: add playback metrics collector"
 - Modify: `packages/core/cmd/mojify/main.go`
 - Test: `packages/core/internal/cli/play_test.go`
 
-- [ ] **Step 1: Add failing player skipped-frame metrics test**
+- [x] **Step 1: Add failing player skipped-frame metrics test**
 
 Modify `packages/core/internal/player/player_test.go` so `TestPlayerSkipsLateBufferedFrames` creates metrics and asserts skipped count:
 
@@ -491,7 +491,7 @@ Add this import to the same file:
 	"github.com/jass/mojify/packages/core/internal/playback"
 ```
 
-- [ ] **Step 2: Add failing presenter metrics test**
+- [x] **Step 2: Add failing presenter metrics test**
 
 Add this test to `packages/core/internal/terminal/presenter_test.go`:
 
@@ -532,7 +532,7 @@ Add this import to `packages/core/internal/terminal/presenter_test.go`:
 	"github.com/jass/mojify/packages/core/internal/playback"
 ```
 
-- [ ] **Step 3: Add failing CLI stats summary test**
+- [x] **Step 3: Add failing CLI stats summary test**
 
 Add this test to `packages/core/internal/cli/play_test.go`:
 
@@ -569,7 +569,7 @@ Add these imports to `packages/core/internal/cli/play_test.go`:
 	"github.com/jass/mojify/packages/core/internal/playback"
 ```
 
-- [ ] **Step 4: Run tests to verify failure**
+- [x] **Step 4: Run tests to verify failure**
 
 Run:
 
@@ -587,7 +587,7 @@ undefined: PlayOptions
 undefined: printStats
 ```
 
-- [ ] **Step 5: Implement player skipped-frame metrics**
+- [x] **Step 5: Implement player skipped-frame metrics**
 
 Modify `packages/core/internal/player/player.go` imports:
 
@@ -677,7 +677,7 @@ Update existing player tests:
 err := playWithControls(context.Background(), frames, presenter, 10, nil, clock, metrics)
 ```
 
-- [ ] **Step 6: Implement presenter metrics**
+- [x] **Step 6: Implement presenter metrics**
 
 Modify `packages/core/internal/terminal/presenter.go`:
 
@@ -719,7 +719,7 @@ func (p Presenter) Stop() error {
 }
 ```
 
-- [ ] **Step 7: Wire metrics through play orchestration**
+- [x] **Step 7: Wire metrics through play orchestration**
 
 Modify `packages/core/internal/cli/play.go` imports:
 
@@ -833,7 +833,7 @@ func printStats(w io.Writer, options PlayOptions, metrics *playback.Metrics) {
 }
 ```
 
-- [ ] **Step 8: Update main play call**
+- [x] **Step 8: Update main play call**
 
 Modify the `PlayCommand` case in `packages/core/cmd/mojify/main.go`:
 
@@ -854,7 +854,7 @@ Modify the `PlayCommand` case in `packages/core/cmd/mojify/main.go`:
 		}
 ```
 
-- [ ] **Step 9: Run tests**
+- [x] **Step 9: Run tests**
 
 Run:
 
@@ -871,7 +871,7 @@ ok  	github.com/jass/mojify/packages/core/internal/terminal
 ok  	github.com/jass/mojify/packages/core/internal/cli
 ```
 
-- [ ] **Step 10: Smoke stats output**
+- [x] **Step 10: Smoke stats output**
 
 Build and run with a local sample:
 
@@ -890,7 +890,7 @@ command exits 0
 /private/tmp/mojify-stats.err contains "effective fps:"
 ```
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add packages/core/cmd/mojify/main.go packages/core/internal/cli/play.go packages/core/internal/cli/play_test.go packages/core/internal/player/player.go packages/core/internal/player/player_test.go packages/core/internal/terminal/presenter.go packages/core/internal/terminal/presenter_test.go
@@ -907,7 +907,7 @@ git commit -m "feat: report playback stats"
 - Modify: `package.json`
 - Modify: `README.md`
 
-- [ ] **Step 1: Create QA clip generator script**
+- [x] **Step 1: Create QA clip generator script**
 
 Create `scripts/generate-qa-clips.sh`:
 
@@ -938,7 +938,7 @@ printf '  dist/qa/high-motion-testsrc.mp4\n'
 printf '  dist/qa/high-contrast-grid.mp4\n'
 ```
 
-- [ ] **Step 2: Add root script**
+- [x] **Step 2: Add root script**
 
 Modify `package.json` scripts:
 
@@ -948,7 +948,7 @@ Modify `package.json` scripts:
 
 Keep the existing scripts unchanged.
 
-- [ ] **Step 3: Create playback QA checklist**
+- [x] **Step 3: Create playback QA checklist**
 
 Create `docs/qa/playback-quality.md`:
 
@@ -1012,7 +1012,7 @@ Capture these observations when comparing changes:
 - Stats summary.
 ````
 
-- [ ] **Step 4: Update README**
+- [x] **Step 4: Update README**
 
 Add this section after `Run` in `README.md`:
 
@@ -1028,7 +1028,7 @@ bun run build
 The repeatable playback quality checklist lives in `docs/qa/playback-quality.md`.
 ````
 
-- [ ] **Step 5: Run generator and inspect clips**
+- [x] **Step 5: Run generator and inspect clips**
 
 Run:
 
@@ -1045,7 +1045,7 @@ dist/qa/high-motion-testsrc.mp4
 dist/qa/high-contrast-grid.mp4
 ```
 
-- [ ] **Step 6: Run docs/script verification**
+- [x] **Step 6: Run docs/script verification**
 
 Run:
 
@@ -1065,7 +1065,7 @@ all commands pass
 each probe prints video metadata
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add package.json README.md scripts/generate-qa-clips.sh docs/qa/playback-quality.md
@@ -1079,7 +1079,7 @@ git commit -m "docs: add playback quality qa workflow"
 **Files:**
 - Verify all changed files.
 
-- [ ] **Step 1: Run full verification**
+- [x] **Step 1: Run full verification**
 
 Run:
 
@@ -1103,7 +1103,7 @@ all commands pass
 git status shows no generated dist/qa files because dist/ is ignored
 ```
 
-- [ ] **Step 2: Review scope**
+- [x] **Step 2: Review scope**
 
 Check:
 
@@ -1119,7 +1119,7 @@ changes are limited to stats, metrics, generated QA clip workflow, and docs
 the rg command prints no matches
 ```
 
-- [ ] **Step 3: Request code review**
+- [x] **Step 3: Request code review**
 
 Ask a reviewer to inspect:
 
@@ -1132,11 +1132,11 @@ Playback Quality Measurement Baseline:
 - No terminal output optimization is included.
 ```
 
-- [ ] **Step 4: Address review feedback**
+- [x] **Step 4: Address review feedback**
 
 If review returns Critical or Important findings, fix them before finishing the branch. Minor findings can be documented for the follow-up output-optimization plan.
 
-- [ ] **Step 5: Finish branch**
+- [x] **Step 5: Finish branch**
 
 Run the finishing workflow:
 

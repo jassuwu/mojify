@@ -1,0 +1,14 @@
+{
+  "name": "@mojify/core",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "mkdir -p bin && go build -o bin/mojify ./cmd/mojify",
+    "dev": "go run ./cmd/mojify --help",
+    "test": "go test ./...",
+    "typecheck": "go test ./...",
+    "fmt": "gofmt -w .",
+    "fmt:check": "test -z \"$(gofmt -l .)\""
+  }
+}

@@ -22,6 +22,16 @@ bun run build
 ./bin/mojify play ./demo.mp4
 ```
 
+## Playback QA
+
+```bash
+bun run qa:clips
+bun run build
+./bin/mojify play --stats dist/qa/low-motion-bars.mp4
+```
+
+The repeatable playback quality checklist lives in `docs/qa/playback-quality.md`.
+
 ## Scope
 
 Included in v1:

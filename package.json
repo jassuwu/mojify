@@ -8,6 +8,7 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "dev:core": "turbo run dev --filter=@mojify/core",
+    "qa:clips": "bash scripts/generate-qa-clips.sh",
     "fmt": "gofmt -w packages/core",
     "fmt:check": "test -z \"$(gofmt -l packages/core)\""
   },

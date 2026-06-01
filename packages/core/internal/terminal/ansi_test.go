@@ -41,3 +41,12 @@ func TestSerializeFrameUsesDeterministicRowsAndSuppressesRepeatedColor(t *testin
 		t.Fatalf("SerializeFrame() = %q, want %q", got, want)
 	}
 }
+
+func TestSynchronizedUpdateSequencesAreStable(t *testing.T) {
+	if BeginSynchronizedUpdate != "\x1b[?2026h" {
+		t.Fatalf("BeginSynchronizedUpdate = %q, want CSI ? 2026 h", BeginSynchronizedUpdate)
+	}
+	if EndSynchronizedUpdate != "\x1b[?2026l" {
+		t.Fatalf("EndSynchronizedUpdate = %q, want CSI ? 2026 l", EndSynchronizedUpdate)
+	}
+}

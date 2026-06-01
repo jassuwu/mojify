@@ -22,11 +22,32 @@ func (p Presenter) Start() error {
 func (p Presenter) Present(frame render.CharacterFrame) error {
 	start := time.Now()
 	output := SerializeFrame(frame)
-	n, err := io.WriteString(p.Out, output)
+	n, err := writeSynchronizedFrame(p.Out, output)
 	if err == nil && p.Metrics != nil {
 		p.Metrics.RecordPresented(n, time.Since(start))
 	}
 	return err
+}
+
+func writeSynchronizedFrame(w io.Writer, output string) (int, error) {
+	total, err := io.WriteString(w, BeginSynchronizedUpdate)
+	if err != nil {
+		return total, err
+	}
+
+	n, frameErr := io.WriteString(w, output)
+	total += n
+
+	n, endErr := io.WriteString(w, EndSynchronizedUpdate)
+	total += n
+
+	if frameErr != nil {
+		return total, frameErr
+	}
+	if endErr != nil {
+		return total, endErr
+	}
+	return total, nil
 }
 
 func (p Presenter) Stop() error {

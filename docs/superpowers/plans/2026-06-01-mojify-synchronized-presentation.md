@@ -345,8 +345,8 @@ Add this section after `Notes To Record`:
 
 For synchronized presentation, visual QA is the acceptance gate. Metrics are guardrails:
 
-- Effective FPS should not materially regress against the previous `--stats` baseline for the same clip and terminal size.
-- Presented frames should not materially regress against the previous `--stats` baseline for the same clip and terminal size.
+- Effective FPS should not materially regress against the previous `--stats` baseline for the same clip, terminal app, and terminal size.
+- Presented frames should not materially regress against the previous `--stats` baseline for the same clip, terminal app, and terminal size.
 - The comparison point is the prior playback-quality baseline `--stats` run for the same clip, terminal app, and terminal size. If no prior run is available, record the current run as the new comparison point and do not claim a metrics improvement.
 - Average bytes per frame may increase slightly because synchronized-update markers add terminal control bytes.
 ```
@@ -462,7 +462,7 @@ Run:
 
 ```bash
 git diff --stat main...HEAD
-git diff main...HEAD -- packages/core/internal/terminal packages/core/internal/cli packages/core/cmd README.md docs/qa package.json scripts | rg -n "frame diffing|dirty region|seek|audio|export|url|--no-sync|--sync|renderer recipe|lower resolution|256-color"
+git diff main...HEAD -- packages/core/internal/terminal packages/core/internal/cli packages/core/cmd package.json scripts | rg -n "frame diffing|dirty region|seek|audio|export|url|--no-sync|--sync|renderer recipe|lower resolution|256-color"
 ```
 
 Expected:

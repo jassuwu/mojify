@@ -37,8 +37,21 @@ func TestPresenterLifecycleWritesTerminalSequences(t *testing.T) {
 	if err := presenter.Stop(); err != nil {
 		t.Fatalf("Stop returned error: %v", err)
 	}
-	if got, want := out.String(), Reset+ShowCursor+ExitAltScreen; got != want {
+	if got, want := out.String(), EndSynchronizedUpdate+Reset+ShowCursor+ExitAltScreen; got != want {
 		t.Fatalf("Stop wrote %q, want %q", got, want)
+	}
+}
+
+func TestPresenterStartRestoresTerminalOnWriteError(t *testing.T) {
+	writer := newFailOnceAfterBytesWriter(len(EnterAltScreen) + 1)
+	presenter := Presenter{Out: writer}
+
+	if err := presenter.Start(); err == nil {
+		t.Fatal("Start returned nil error")
+	}
+
+	if got, want := writer.String(), EnterAltScreen+HideCursor[:1]+EndSynchronizedUpdate+Reset+ShowCursor+ExitAltScreen; got != want {
+		t.Fatalf("Start wrote %q, want %q", got, want)
 	}
 }
 
@@ -92,7 +105,7 @@ func TestPresenterDoesNotRecordPresentedFrameOnWriteError(t *testing.T) {
 
 func TestWriteSynchronizedFrameReturnsFrameWriteError(t *testing.T) {
 	output := "frame output"
-	writer := newFailAfterBytesWriter(len(BeginSynchronizedUpdate) + 2)
+	writer := newFailOnceAfterBytesWriter(len(BeginSynchronizedUpdate) + 2)
 
 	n, err := writeSynchronizedFrame(writer, output)
 
@@ -102,10 +115,10 @@ func TestWriteSynchronizedFrameReturnsFrameWriteError(t *testing.T) {
 	if got, want := err.Error(), "write failed"; got != want {
 		t.Fatalf("writeSynchronizedFrame error = %q, want %q", got, want)
 	}
-	if got, want := n, len(BeginSynchronizedUpdate)+2; got != want {
+	if got, want := n, len(BeginSynchronizedUpdate)+2+len(EndSynchronizedUpdate); got != want {
 		t.Fatalf("writeSynchronizedFrame wrote %d bytes, want %d", got, want)
 	}
-	if got, want := writer.String(), BeginSynchronizedUpdate+output[:2]; got != want {
+	if got, want := writer.String(), BeginSynchronizedUpdate+output[:2]+EndSynchronizedUpdate; got != want {
 		t.Fatalf("writeSynchronizedFrame output = %q, want %q", got, want)
 	}
 }
@@ -159,5 +172,37 @@ func (w *failAfterBytesWriter) Write(p []byte) (int, error) {
 }
 
 func (w *failAfterBytesWriter) String() string {
+	return w.buf.String()
+}
+
+type failOnceAfterBytesWriter struct {
+	limit  int
+	failed bool
+	buf    bytes.Buffer
+}
+
+func newFailOnceAfterBytesWriter(limit int) *failOnceAfterBytesWriter {
+	return &failOnceAfterBytesWriter{limit: limit}
+}
+
+func (w *failOnceAfterBytesWriter) Write(p []byte) (int, error) {
+	if w.failed {
+		return w.buf.Write(p)
+	}
+
+	remaining := w.limit - w.buf.Len()
+	if remaining <= 0 {
+		w.failed = true
+		return 0, errors.New("write failed")
+	}
+	if len(p) > remaining {
+		w.buf.Write(p[:remaining])
+		w.failed = true
+		return remaining, errors.New("write failed")
+	}
+	return w.buf.Write(p)
+}
+
+func (w *failOnceAfterBytesWriter) String() string {
 	return w.buf.String()
 }

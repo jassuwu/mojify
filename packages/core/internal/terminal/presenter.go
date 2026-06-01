@@ -1,6 +1,7 @@
 package terminal
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -16,6 +17,9 @@ type Presenter struct {
 
 func (p Presenter) Start() error {
 	_, err := fmt.Fprint(p.Out, EnterAltScreen, HideCursor, CursorHome, ClearToEnd)
+	if err != nil {
+		return errors.Join(err, p.Stop())
+	}
 	return err
 }
 
@@ -42,7 +46,7 @@ func writeSynchronizedFrame(w io.Writer, output string) (int, error) {
 	total += n
 
 	if frameErr != nil {
-		return total, frameErr
+		return total, errors.Join(frameErr, endErr)
 	}
 	if endErr != nil {
 		return total, endErr
@@ -51,6 +55,6 @@ func writeSynchronizedFrame(w io.Writer, output string) (int, error) {
 }
 
 func (p Presenter) Stop() error {
-	_, err := fmt.Fprint(p.Out, Reset, ShowCursor, ExitAltScreen)
+	_, err := fmt.Fprint(p.Out, EndSynchronizedUpdate, Reset, ShowCursor, ExitAltScreen)
 	return err
 }

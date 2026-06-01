@@ -6,6 +6,7 @@ import (
 
 	"github.com/jass/mojify/packages/core/internal/cli"
 	"github.com/jass/mojify/packages/core/internal/media"
+	"github.com/jass/mojify/packages/core/internal/render"
 )
 
 func main() {
@@ -34,6 +35,11 @@ func main() {
 		fmt.Printf("fps: %.3f\n", info.FPS)
 		fmt.Printf("frames: %d\n", info.FrameCount)
 		fmt.Printf("duration: %.3fs\n", info.DurationSeconds)
+		grid := render.FitGrid(
+			render.InputSize{Width: info.Width, Height: info.Height},
+			render.TerminalSize{Cols: 120, Rows: 40},
+		)
+		fmt.Printf("render-grid: %dx%d (sample terminal 120x40)\n", grid.Cols, grid.Rows)
 	default:
 		fmt.Fprintln(os.Stderr, "unknown command")
 		os.Exit(2)

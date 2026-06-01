@@ -1,19 +1,41 @@
 # mojify
 
-Terminal-first video playback with colored, edge-aware character frames.
+Mojify is a terminal-first video player that transforms local video files into colored, edge-aware character frames.
 
-## V1 Scope
+## Status
 
-- Local video files only.
-- Visual playback only, no audio.
-- FFmpeg CLI required.
-- Source-build distribution first.
+V1 is source-build only. The first milestone is local visual playback in the terminal.
 
-## Development
+## Requirements
+
+- Go 1.23+
+- Bun 1.3+
+- FFmpeg and ffprobe on `PATH`
+
+## Run
 
 ```bash
 bun install
 bun run build
-bun run test
-go run ./packages/core/cmd/mojify --help
+./bin/mojify --help
+./bin/mojify probe ./demo.mp4
+./bin/mojify play ./demo.mp4
 ```
+
+## Scope
+
+Included in v1:
+
+- Local video files
+- Visual terminal playback
+- Truecolor ANSI output
+- Edge-aware character rendering
+- `play` and `probe` commands
+
+Deferred:
+
+- YouTube/URL input
+- Audio
+- Export to GIF/MP4/PNG
+- npm/npx distribution
+- Plugins and custom recipes

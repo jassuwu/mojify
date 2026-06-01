@@ -462,7 +462,7 @@ Run:
 
 ```bash
 git diff --stat main...HEAD
-git diff main...HEAD -- packages/core/internal/terminal packages/core/internal/cli packages/core/cmd README.md docs/qa package.json scripts | rg -n "diff|dirty region|seek|audio|export|url|--no-sync|--sync|renderer recipe|lower resolution|256-color"
+git diff main...HEAD -- packages/core/internal/terminal packages/core/internal/cli packages/core/cmd README.md docs/qa package.json scripts | rg -n "frame diffing|dirty region|seek|audio|export|url|--no-sync|--sync|renderer recipe|lower resolution|256-color"
 ```
 
 Expected:

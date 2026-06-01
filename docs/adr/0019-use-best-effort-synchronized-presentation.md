@@ -1,6 +1,6 @@
 # Use best-effort synchronized presentation
 
-The next playback quality hardening step should target visible repainting before changing fidelity or adding new product surface. Mojify will enable synchronized presentation by default as a best-effort terminal capability, falling back to the existing presenter behavior when terminals ignore or do not benefit from the synchronization escape sequences.
+The next playback quality hardening step should target visible repainting before changing fidelity or adding new product surface. Mojify will enable synchronized presentation by default as a best-effort terminal capability: terminals that support the synchronization escape sequences can apply frame updates atomically, while terminals that ignore the sequences continue to display the same frame content through the existing presenter behavior.
 
 This preserves the rendered frame and CLI shape while testing whether terminal-level atomic updates are enough before introducing frame diffing or other byte-reduction strategies.
 

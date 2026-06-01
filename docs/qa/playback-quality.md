@@ -62,6 +62,7 @@ Capture these observations when comparing changes:
 
 For synchronized presentation, visual QA is the acceptance gate. Metrics are guardrails:
 
-- Effective FPS should not materially regress against the previous `--stats` baseline for the same clip and terminal size.
-- Presented frames should not materially regress against the previous `--stats` baseline for the same clip and terminal size.
+- Effective FPS should not materially regress against the previous `--stats` baseline for the same clip, terminal app, and terminal size.
+- Presented frames should not materially regress against the previous `--stats` baseline for the same clip, terminal app, and terminal size.
+- If no prior baseline exists for that clip, terminal app, and terminal size, record the current stats as the comparison point and do not claim a metrics improvement.
 - Average bytes per frame may increase slightly because synchronized-update markers add terminal control bytes.

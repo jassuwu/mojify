@@ -42,6 +42,7 @@ For each clip:
 - Ctrl-C restores the cursor and terminal.
 - Playback does not show distracting full-screen flashing.
 - Playback does not show obvious top-to-bottom repaint waves at normal terminal size.
+- Synchronized presentation does not introduce visible stalling, tearing, or delayed frame bursts.
 - The stats summary appears after exit.
 - The stats summary includes render grid, rendered frames, presented frames, skipped frames, effective FPS, average render time, average present time, and average bytes per frame.
 
@@ -50,8 +51,17 @@ For each clip:
 Capture these observations when comparing changes:
 
 - Terminal app and version.
+- Whether the terminal appears to support synchronized updates.
 - Terminal size.
 - Clip name.
 - Whether repainting is distracting.
 - Whether timing feels continuous.
 - Stats summary.
+
+## Regression Guardrails
+
+For synchronized presentation, visual QA is the acceptance gate. Metrics are guardrails:
+
+- Effective FPS should not materially regress against the previous `--stats` baseline for the same clip and terminal size.
+- Presented frames should not materially regress against the previous `--stats` baseline for the same clip and terminal size.
+- Average bytes per frame may increase slightly because synchronized-update markers add terminal control bytes.

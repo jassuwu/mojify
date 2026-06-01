@@ -129,6 +129,9 @@ func playbackResult(ctxErr error, playErr error, renderErr error, decoderErr err
 	if playErr != nil {
 		return playErr
 	}
+	if wasCancelled {
+		return nil
+	}
 	if renderErr != nil {
 		return renderErr
 	}

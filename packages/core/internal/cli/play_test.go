@@ -36,3 +36,13 @@ func TestPlaybackResultTreatsCancellationAsClean(t *testing.T) {
 		t.Fatalf("err = %v, want nil", err)
 	}
 }
+
+func TestPlaybackResultTreatsCancellationTeardownReadErrorAsClean(t *testing.T) {
+	renderErr := errors.New("read pipe: file already closed")
+	decoderErr := errors.New("signal: killed")
+
+	err := playbackResult(context.Canceled, player.ErrCancelled, renderErr, decoderErr)
+	if err != nil {
+		t.Fatalf("err = %v, want nil", err)
+	}
+}

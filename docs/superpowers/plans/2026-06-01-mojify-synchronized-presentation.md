@@ -38,7 +38,7 @@
 - Modify: `packages/core/internal/terminal/ansi.go`
 - Modify: `packages/core/internal/terminal/ansi_test.go`
 
-- [ ] **Step 1: Add failing terminal constant test**
+- [x] **Step 1: Add failing terminal constant test**
 
 Add this test to `packages/core/internal/terminal/ansi_test.go` after `TestSerializeFrameUsesDeterministicRowsAndSuppressesRepeatedColor`:
 
@@ -53,7 +53,7 @@ func TestSynchronizedUpdateSequencesAreStable(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run:
 
@@ -69,7 +69,7 @@ packages/core/internal/terminal/ansi_test.go:...: undefined: BeginSynchronizedUp
 packages/core/internal/terminal/ansi_test.go:...: undefined: EndSynchronizedUpdate
 ```
 
-- [ ] **Step 3: Define synchronized update constants**
+- [x] **Step 3: Define synchronized update constants**
 
 Modify the `const` block in `packages/core/internal/terminal/ansi.go` to include:
 
@@ -87,7 +87,7 @@ const (
 )
 ```
 
-- [ ] **Step 4: Run terminal tests**
+- [x] **Step 4: Run terminal tests**
 
 Run:
 
@@ -102,7 +102,7 @@ Expected:
 ok  	github.com/jass/mojify/packages/core/internal/terminal
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/internal/terminal/ansi.go packages/core/internal/terminal/ansi_test.go
@@ -117,7 +117,7 @@ git commit -m "feat: add synchronized update sequences"
 - Modify: `packages/core/internal/terminal/presenter.go`
 - Modify: `packages/core/internal/terminal/presenter_test.go`
 
-- [ ] **Step 1: Add failing presenter output test update**
+- [x] **Step 1: Add failing presenter output test update**
 
 In `packages/core/internal/terminal/presenter_test.go`, update the `Present` assertion in `TestPresenterLifecycleWritesTerminalSequences`:
 
@@ -143,7 +143,7 @@ Keep the `Stop` assertion as:
 	}
 ```
 
-- [ ] **Step 2: Add failing synchronized write error tests**
+- [x] **Step 2: Add failing synchronized write error tests**
 
 Add these tests and helper writer to `packages/core/internal/terminal/presenter_test.go` after `TestPresenterDoesNotRecordPresentedFrameOnWriteError`:
 
@@ -198,7 +198,7 @@ func (w *failAfterWriter) Write(p []byte) (int, error) {
 
 `presenter_test.go` already imports `bytes` and `errors`; keep those imports.
 
-- [ ] **Step 3: Run test to verify failure**
+- [x] **Step 3: Run test to verify failure**
 
 Run:
 
@@ -214,7 +214,7 @@ Present wrote "\x1b[H..." want "\x1b[?2026h\x1b[H...\x1b[?2026l"
 undefined: writeSynchronizedFrame
 ```
 
-- [ ] **Step 4: Implement synchronized frame writing**
+- [x] **Step 4: Implement synchronized frame writing**
 
 Modify `packages/core/internal/terminal/presenter.go` so `Present` calls a helper that writes begin marker, serialized frame, and end marker:
 
@@ -253,7 +253,7 @@ func writeSynchronizedFrame(w io.Writer, output string) (int, error) {
 
 Do not wrap `Start` or `Stop`; only frame presentation should be synchronized.
 
-- [ ] **Step 5: Run presenter tests**
+- [x] **Step 5: Run presenter tests**
 
 Run:
 
@@ -268,7 +268,7 @@ Expected:
 ok  	github.com/jass/mojify/packages/core/internal/terminal
 ```
 
-- [ ] **Step 6: Verify metrics count synchronized output bytes**
+- [x] **Step 6: Verify metrics count synchronized output bytes**
 
 Run:
 
@@ -284,7 +284,7 @@ ok  	github.com/jass/mojify/packages/core/internal/terminal
 
 The existing `AverageBytesPerFrame == out.Len()` assertion must continue to pass, which means stats include the synchronized-update marker bytes.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/core/internal/terminal/presenter.go packages/core/internal/terminal/presenter_test.go
@@ -298,7 +298,7 @@ git commit -m "feat: synchronize terminal frame presentation"
 **Files:**
 - Modify: `docs/qa/playback-quality.md`
 
-- [ ] **Step 1: Update visual checklist**
+- [x] **Step 1: Update visual checklist**
 
 In `docs/qa/playback-quality.md`, update the visual checklist to include synchronized-presentation observations:
 
@@ -318,7 +318,7 @@ For each clip:
 - The stats summary includes render grid, rendered frames, presented frames, skipped frames, effective FPS, average render time, average present time, and average bytes per frame.
 ```
 
-- [ ] **Step 2: Update notes to record**
+- [x] **Step 2: Update notes to record**
 
 In `docs/qa/playback-quality.md`, update `Notes To Record` to include terminal synchronization support:
 
@@ -336,7 +336,7 @@ Capture these observations when comparing changes:
 - Stats summary.
 ```
 
-- [ ] **Step 3: Add regression guardrail note**
+- [x] **Step 3: Add regression guardrail note**
 
 Add this section after `Notes To Record`:
 
@@ -351,7 +351,7 @@ For synchronized presentation, visual QA is the acceptance gate. Metrics are gua
 - Average bytes per frame may increase slightly because synchronized-update markers add terminal control bytes.
 ```
 
-- [ ] **Step 4: Run docs verification**
+- [x] **Step 4: Run docs verification**
 
 Run:
 
@@ -367,7 +367,7 @@ docs/qa/playback-quality.md:...: Whether the terminal appears to support synchro
 docs/qa/playback-quality.md:...: ## Regression Guardrails
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/qa/playback-quality.md
@@ -381,7 +381,7 @@ git commit -m "docs: add synchronized presentation qa notes"
 **Files:**
 - Verify all changed files.
 
-- [ ] **Step 1: Run full verification**
+- [x] **Step 1: Run full verification**
 
 Run:
 
@@ -410,7 +410,7 @@ stdout files are non-empty
 git status shows no generated dist/qa files because dist/ is ignored
 ```
 
-- [ ] **Step 2: Verify stats stream placement**
+- [x] **Step 2: Verify stats stream placement**
 
 Run:
 
@@ -428,7 +428,7 @@ Expected:
 
 The command must not report `playback stats` in stdout files and must not report `play failed` in any file.
 
-- [ ] **Step 3: Run interactive smoke**
+- [x] **Step 3: Run interactive smoke**
 
 Run in a real terminal:
 
@@ -456,7 +456,7 @@ no obvious top-to-bottom repaint wave in a terminal that supports synchronized u
 if the terminal ignores synchronized updates, frame content remains correct and playback still exits cleanly
 ```
 
-- [ ] **Step 4: Review scope**
+- [x] **Step 4: Review scope**
 
 Run:
 
@@ -472,7 +472,7 @@ changes are limited to synchronized terminal presentation, QA docs, and planning
 the rg command prints no matches
 ```
 
-- [ ] **Step 5: Request code review**
+- [x] **Step 5: Request code review**
 
 Ask reviewers to inspect:
 
@@ -485,11 +485,11 @@ Synchronized Presentation:
 - Visual QA remains the acceptance gate; metrics are regression guards.
 ```
 
-- [ ] **Step 6: Address review feedback**
+- [x] **Step 6: Address review feedback**
 
 If review returns Critical or Important findings, fix them before finishing the branch. Minor findings can be documented for the follow-up frame-diffing plan.
 
-- [ ] **Step 7: Finish branch**
+- [x] **Step 7: Finish branch**
 
 Run the finishing workflow:
 

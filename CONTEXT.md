@@ -52,6 +52,14 @@ _Avoid_: Native-video smoothness, metric-only success
 Runtime measurements used during playback quality hardening: rendered frames, skipped frames, effective FPS, average frame render time, average present/write time, output bytes per frame, and render grid size.
 _Avoid_: Full profiler trace, benchmark-only report
 
+**Terminal output optimization**:
+The playback quality hardening work that reduces visible repainting and terminal write volume during playback while preserving the renderer, scheduler, controls, and CLI shape.
+_Avoid_: New renderer recipe, new product surface, audio, export
+
+**Synchronized presentation**:
+A best-effort terminal presentation mode where each character frame update is bracketed so capable terminals apply the update as a single visual refresh.
+_Avoid_: Frame diffing, lower fidelity rendering, required terminal feature
+
 **Sample clip QA set**:
 The repeatable clips used to evaluate playback quality hardening. The canonical set is generated synthetic clips for low-motion, high-motion, and high-contrast edge cases; ignored local real clips can supplement manual QA.
 _Avoid_: Checked-in copyrighted videos, one-off user-only demos

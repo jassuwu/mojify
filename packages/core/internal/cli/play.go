@@ -7,16 +7,22 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"time"
 
 	xterm "golang.org/x/term"
 
 	"github.com/jass/mojify/packages/core/internal/media"
+	"github.com/jass/mojify/packages/core/internal/playback"
 	"github.com/jass/mojify/packages/core/internal/player"
 	"github.com/jass/mojify/packages/core/internal/render"
 	"github.com/jass/mojify/packages/core/internal/terminal"
 )
 
-func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Writer) error {
+type PlayOptions struct {
+	Stats bool
+}
+
+func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Writer, stderr io.Writer, options PlayOptions) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -33,6 +39,10 @@ func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Wr
 		render.InputSize{Width: info.Width, Height: info.Height},
 		render.TerminalSize{Cols: cols, Rows: rows - 1},
 	)
+	var metrics *playback.Metrics
+	if options.Stats {
+		metrics = playback.NewMetrics(grid.Cols, grid.Rows)
+	}
 
 	decodeWidth := min(info.Width, 640)
 	decodeHeight := max(1, decodeWidth*info.Height/info.Width)
@@ -40,14 +50,10 @@ func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Wr
 	if err != nil {
 		return fmt.Errorf("start decoder: %w", err)
 	}
-	decoderDone := make(chan error, 1)
-	go func() {
-		decoderDone <- cmd.Wait()
-	}()
 	decoderCleaned := false
 	defer func() {
 		if !decoderCleaned {
-			_ = cleanupDecoder(cmd, pipe, decoderDone)
+			_ = cleanupDecoder(cmd, pipe)
 		}
 	}()
 
@@ -55,6 +61,9 @@ func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Wr
 	renderErr := make(chan error, 1)
 	renderDone := make(chan struct{})
 	renderer := render.DefaultRenderer{}
+	if metrics != nil {
+		metrics.Start(time.Now())
+	}
 	go func() {
 		defer close(renderDone)
 		defer close(frames)
@@ -66,33 +75,51 @@ func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Wr
 				}
 				return
 			}
+			start := time.Now()
+			frame := renderer.Render(rgb, grid)
+			if metrics != nil {
+				metrics.RecordRendered(time.Since(start))
+			}
 			select {
 			case <-ctx.Done():
 				return
-			case frames <- renderer.Render(rgb, grid):
+			case frames <- frame:
 			}
 		}
 	}()
 
-	presenter := terminal.Presenter{Out: stdout}
+	presenter := terminal.Presenter{Out: stdout, Metrics: metrics}
 	if err := presenter.Start(); err != nil {
 		return err
 	}
-	defer presenter.Stop()
+	presenterStopped := false
+	defer func() {
+		if !presenterStopped {
+			_ = presenter.Stop()
+		}
+	}()
 
 	controls, stopControls, err := startPlaybackControls(ctx, cancel, stdin)
 	if err != nil {
 		return err
 	}
-	defer stopControls()
+	controlsStopped := false
+	defer func() {
+		if !controlsStopped {
+			stopControls()
+		}
+	}()
 
-	playErr := player.PlayWithControls(ctx, frames, presenter, info.FPS, controls)
+	playErr := player.PlayWithControls(ctx, frames, presenter, info.FPS, controls, metrics)
 	ctxErr := ctx.Err()
 	if ctxErr != nil || playErr != nil {
 		cancel()
+		_ = pipe.Close()
 	}
-	_ = pipe.Close()
 	<-renderDone
+	if metrics != nil {
+		metrics.Finish(time.Now())
+	}
 
 	var frameErr error
 	select {
@@ -105,26 +132,41 @@ func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Wr
 	var decoderErr error
 	if shouldKillDecoder {
 		cancel()
-		decoderErr = cleanupDecoder(cmd, pipe, decoderDone)
+		decoderErr = cleanupDecoder(cmd, pipe)
 	} else {
-		decoderErr = waitDecoder(pipe, decoderDone)
+		decoderErr = waitDecoder(cmd)
 	}
 	decoderCleaned = true
 	cancel()
-	return playbackResult(ctxErr, playErr, frameErr, decoderErr)
+	resultErr := playbackResult(ctxErr, playErr, frameErr, decoderErr)
+	stopControls()
+	controlsStopped = true
+	if err := presenter.Stop(); err != nil && resultErr == nil {
+		resultErr = err
+	}
+	presenterStopped = true
+	printStats(stderr, options, metrics)
+	return resultErr
 }
 
-func cleanupDecoder(cmd *exec.Cmd, pipe io.Closer, decoderDone <-chan error) error {
+func cleanupDecoder(cmd *exec.Cmd, pipe io.Closer) error {
 	_ = pipe.Close()
 	if cmd.Process != nil {
 		_ = cmd.Process.Kill()
 	}
-	return <-decoderDone
+	return cmd.Wait()
 }
 
-func waitDecoder(pipe io.Closer, decoderDone <-chan error) error {
-	_ = pipe.Close()
-	return <-decoderDone
+func waitDecoder(cmd *exec.Cmd) error {
+	return cmd.Wait()
+}
+
+func printStats(w io.Writer, options PlayOptions, metrics *playback.Metrics) {
+	if !options.Stats || metrics == nil {
+		return
+	}
+	fmt.Fprintln(w)
+	fmt.Fprint(w, metrics.Summary())
 }
 
 func startPlaybackControls(ctx context.Context, cancel context.CancelFunc, stdin *os.File) (<-chan player.Control, func(), error) {

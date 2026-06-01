@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jass/mojify/packages/core/internal/playback"
 	"github.com/jass/mojify/packages/core/internal/render"
 )
 
@@ -23,11 +24,18 @@ var ErrCancelled = errors.New("playback cancelled")
 var ErrQuit = errors.New("playback quit")
 
 func Play(ctx context.Context, frames <-chan render.CharacterFrame, presenter Presenter, fps float64) error {
-	return PlayWithControls(ctx, frames, presenter, fps, nil)
+	return PlayWithControls(ctx, frames, presenter, fps, nil, nil)
 }
 
-func PlayWithControls(ctx context.Context, frames <-chan render.CharacterFrame, presenter Presenter, fps float64, controls <-chan Control) error {
-	return playWithControls(ctx, frames, presenter, fps, controls, realClock{})
+func PlayWithControls(
+	ctx context.Context,
+	frames <-chan render.CharacterFrame,
+	presenter Presenter,
+	fps float64,
+	controls <-chan Control,
+	metrics *playback.Metrics,
+) error {
+	return playWithControls(ctx, frames, presenter, fps, controls, realClock{}, metrics)
 }
 
 type playbackClock interface {
@@ -52,7 +60,15 @@ func (realClock) Sleep(ctx context.Context, delay time.Duration) error {
 	}
 }
 
-func playWithControls(ctx context.Context, frames <-chan render.CharacterFrame, presenter Presenter, fps float64, controls <-chan Control, clock playbackClock) error {
+func playWithControls(
+	ctx context.Context,
+	frames <-chan render.CharacterFrame,
+	presenter Presenter,
+	fps float64,
+	controls <-chan Control,
+	clock playbackClock,
+	metrics *playback.Metrics,
+) error {
 	if fps <= 0 {
 		fps = 24
 	}
@@ -120,7 +136,11 @@ func playWithControls(ctx context.Context, frames <-chan render.CharacterFrame, 
 					return err
 				}
 			} else {
-				frame, nextDeadline = skipLateBufferedFrames(frames, frame, nextDeadline, frameDuration, now)
+				var skipped int
+				frame, nextDeadline, skipped = skipLateBufferedFrames(frames, frame, nextDeadline, frameDuration, now)
+				if metrics != nil {
+					metrics.RecordSkipped(skipped)
+				}
 			}
 			if err := presenter.Present(frame); err != nil {
 				return err
@@ -157,18 +177,20 @@ func skipLateBufferedFrames(
 	nextDeadline time.Time,
 	frameDuration time.Duration,
 	now time.Time,
-) (render.CharacterFrame, time.Time) {
+) (render.CharacterFrame, time.Time, int) {
+	skipped := 0
 	for now.Sub(nextDeadline) >= frameDuration {
 		select {
 		case nextFrame, ok := <-frames:
 			if !ok {
-				return frame, nextDeadline
+				return frame, nextDeadline, skipped
 			}
 			frame = nextFrame
 			nextDeadline = nextDeadline.Add(frameDuration)
+			skipped++
 		default:
-			return frame, nextDeadline
+			return frame, nextDeadline, skipped
 		}
 	}
-	return frame, nextDeadline
+	return frame, nextDeadline, skipped
 }

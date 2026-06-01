@@ -27,7 +27,14 @@ func main() {
 	case cli.PlayCommand:
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
-		if err := cli.RunPlay(ctx, cmd.InputPath, os.Stdin, os.Stdout); err != nil {
+		if err := cli.RunPlay(
+			ctx,
+			cmd.InputPath,
+			os.Stdin,
+			os.Stdout,
+			os.Stderr,
+			cli.PlayOptions{Stats: cmd.Stats},
+		); err != nil {
 			fmt.Fprintf(os.Stderr, "play failed: %v\n", err)
 			os.Exit(1)
 		}

@@ -3,12 +3,15 @@ package terminal
 import (
 	"fmt"
 	"io"
+	"time"
 
+	"github.com/jass/mojify/packages/core/internal/playback"
 	"github.com/jass/mojify/packages/core/internal/render"
 )
 
 type Presenter struct {
-	Out io.Writer
+	Out     io.Writer
+	Metrics *playback.Metrics
 }
 
 func (p Presenter) Start() error {
@@ -17,7 +20,12 @@ func (p Presenter) Start() error {
 }
 
 func (p Presenter) Present(frame render.CharacterFrame) error {
-	_, err := fmt.Fprint(p.Out, SerializeFrame(frame))
+	start := time.Now()
+	output := SerializeFrame(frame)
+	n, err := io.WriteString(p.Out, output)
+	if err == nil && p.Metrics != nil {
+		p.Metrics.RecordPresented(n, time.Since(start))
+	}
 	return err
 }
 

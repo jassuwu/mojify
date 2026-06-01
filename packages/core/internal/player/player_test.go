@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jass/mojify/packages/core/internal/playback"
 	"github.com/jass/mojify/packages/core/internal/render"
 )
 
@@ -56,7 +57,7 @@ func TestPlayerQuitControlStopsPlayback(t *testing.T) {
 	controls <- Quit
 
 	presenter := &fakePresenter{}
-	err := PlayWithControls(context.Background(), frames, presenter, 24, controls)
+	err := PlayWithControls(context.Background(), frames, presenter, 24, controls, nil)
 	if !errors.Is(err, ErrQuit) {
 		t.Fatalf("PlayWithControls returned %v, want %v", err, ErrQuit)
 	}
@@ -73,7 +74,7 @@ func TestPlayerPauseStopsFrameConsumptionUntilResumed(t *testing.T) {
 	presenter := &fakePresenter{}
 	done := make(chan error, 1)
 	go func() {
-		done <- PlayWithControls(context.Background(), frames, presenter, 1000, controls)
+		done <- PlayWithControls(context.Background(), frames, presenter, 1000, controls, nil)
 	}()
 
 	sent := make(chan struct{})
@@ -117,9 +118,13 @@ func TestPlayerSkipsLateBufferedFrames(t *testing.T) {
 		delay: 250 * time.Millisecond,
 	}
 
-	err := playWithControls(context.Background(), frames, presenter, 10, nil, clock)
+	metrics := playback.NewMetrics(1, 1)
+	err := playWithControls(context.Background(), frames, presenter, 10, nil, clock, metrics)
 	if err != nil {
 		t.Fatalf("playWithControls returned error: %v", err)
+	}
+	if metrics.Snapshot().SkippedFrames == 0 {
+		t.Fatal("SkippedFrames = 0, want skipped frame count")
 	}
 	if len(presenter.presented) >= 6 {
 		t.Fatalf("presented all frames %q, want late frames skipped", string(presenter.presented))

@@ -32,9 +32,29 @@ _Avoid_: Seeking, speed control, zoom
 The first milestone: a local video file plays in the terminal with auto-fit truecolor edge-aware character frames and minimal playback controls.
 _Avoid_: Scaffold complete, renderer-only prototype
 
+**Playback quality hardening**:
+The stage after playable local video: improving perceived smoothness and repeatable evaluation of terminal playback before expanding the product surface.
+_Avoid_: Audio, export, URL input, plugins, packaged distribution
+
 **Smooth playback**:
 Playback that maintains stable frame timing in the terminal, even if late frames must be skipped.
 _Avoid_: Showing every frame, frame-perfect playback
+
+**Perceived smoothness**:
+The user's experience that playback updates feel continuous in a real terminal, with minimal visible repainting, flicker, or janky timing.
+_Avoid_: Raw FPS alone, benchmark-only performance
+
+**Practical terminal smoothness**:
+The acceptance bar for playback quality hardening: sample clips should play continuously in a normal terminal size without distracting full-screen flashing or obvious repaint waves, supported by playback metrics.
+_Avoid_: Native-video smoothness, metric-only success
+
+**Playback metrics**:
+Runtime measurements used during playback quality hardening: rendered frames, skipped frames, effective FPS, average frame render time, average present/write time, output bytes per frame, and render grid size.
+_Avoid_: Full profiler trace, benchmark-only report
+
+**Sample clip QA set**:
+The repeatable clips used to evaluate playback quality hardening. The canonical set is generated synthetic clips for low-motion, high-motion, and high-contrast edge cases; ignored local real clips can supplement manual QA.
+_Avoid_: Checked-in copyrighted videos, one-off user-only demos
 
 **Balanced fidelity**:
 The default visual target: enough detail for the edge-aware renderer to be legible while preserving stable playback timing.

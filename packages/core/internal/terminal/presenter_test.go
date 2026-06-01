@@ -29,7 +29,7 @@ func TestPresenterLifecycleWritesTerminalSequences(t *testing.T) {
 	if err := presenter.Present(frame); err != nil {
 		t.Fatalf("Present returned error: %v", err)
 	}
-	if got, want := out.String(), SerializeFrame(frame); got != want {
+	if got, want := out.String(), BeginSynchronizedUpdate+SerializeFrame(frame)+EndSynchronizedUpdate; got != want {
 		t.Fatalf("Present wrote %q, want %q", got, want)
 	}
 
@@ -90,8 +90,74 @@ func TestPresenterDoesNotRecordPresentedFrameOnWriteError(t *testing.T) {
 	}
 }
 
+func TestWriteSynchronizedFrameReturnsFrameWriteError(t *testing.T) {
+	output := "frame output"
+	writer := newFailAfterBytesWriter(len(BeginSynchronizedUpdate) + 2)
+
+	n, err := writeSynchronizedFrame(writer, output)
+
+	if err == nil {
+		t.Fatal("writeSynchronizedFrame returned nil error")
+	}
+	if got, want := err.Error(), "write failed"; got != want {
+		t.Fatalf("writeSynchronizedFrame error = %q, want %q", got, want)
+	}
+	if got, want := n, len(BeginSynchronizedUpdate)+2; got != want {
+		t.Fatalf("writeSynchronizedFrame wrote %d bytes, want %d", got, want)
+	}
+	if got, want := writer.String(), BeginSynchronizedUpdate+output[:2]; got != want {
+		t.Fatalf("writeSynchronizedFrame output = %q, want %q", got, want)
+	}
+}
+
+func TestWriteSynchronizedFrameReturnsEndMarkerWriteError(t *testing.T) {
+	output := "frame output"
+	writer := newFailAfterBytesWriter(len(BeginSynchronizedUpdate) + len(output) + 2)
+
+	n, err := writeSynchronizedFrame(writer, output)
+
+	if err == nil {
+		t.Fatal("writeSynchronizedFrame returned nil error")
+	}
+	if got, want := err.Error(), "write failed"; got != want {
+		t.Fatalf("writeSynchronizedFrame error = %q, want %q", got, want)
+	}
+	if got, want := n, len(BeginSynchronizedUpdate)+len(output)+2; got != want {
+		t.Fatalf("writeSynchronizedFrame wrote %d bytes, want %d", got, want)
+	}
+	if got, want := writer.String(), BeginSynchronizedUpdate+output+EndSynchronizedUpdate[:2]; got != want {
+		t.Fatalf("writeSynchronizedFrame output = %q, want %q", got, want)
+	}
+}
+
 type failingWriter struct{}
 
 func (failingWriter) Write(p []byte) (int, error) {
 	return len(p) / 2, errors.New("write failed")
+}
+
+type failAfterBytesWriter struct {
+	limit int
+	buf   bytes.Buffer
+}
+
+func newFailAfterBytesWriter(limit int) *failAfterBytesWriter {
+	return &failAfterBytesWriter{limit: limit}
+}
+
+func (w *failAfterBytesWriter) Write(p []byte) (int, error) {
+	remaining := w.limit - w.buf.Len()
+	if remaining <= 0 {
+		return 0, errors.New("write failed")
+	}
+	if len(p) > remaining {
+		w.buf.Write(p[:remaining])
+		return remaining, errors.New("write failed")
+	}
+	w.buf.Write(p)
+	return len(p), nil
+}
+
+func (w *failAfterBytesWriter) String() string {
+	return w.buf.String()
 }

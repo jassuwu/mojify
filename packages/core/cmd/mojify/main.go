@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/jass/mojify/packages/core/internal/cli"
+	"github.com/jass/mojify/packages/core/internal/media"
 )
 
 func main() {
@@ -23,8 +24,16 @@ func main() {
 		fmt.Fprintf(os.Stderr, "mojify play is not implemented yet: %s\n", cmd.InputPath)
 		os.Exit(1)
 	case cli.ProbeCommand:
-		fmt.Fprintf(os.Stderr, "mojify probe is not implemented yet: %s\n", cmd.InputPath)
-		os.Exit(1)
+		info, err := media.Probe(cmd.InputPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "probe failed: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("input: %s\n", cmd.InputPath)
+		fmt.Printf("video: %dx%d\n", info.Width, info.Height)
+		fmt.Printf("fps: %.3f\n", info.FPS)
+		fmt.Printf("frames: %d\n", info.FrameCount)
+		fmt.Printf("duration: %.3fs\n", info.DurationSeconds)
 	default:
 		fmt.Fprintln(os.Stderr, "unknown command")
 		os.Exit(2)

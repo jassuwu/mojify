@@ -1,6 +1,10 @@
 package cli
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+	"unicode"
+)
 
 type CommandKind int
 
@@ -54,5 +58,34 @@ func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 	if len(args) > 2 {
 		return Command{}, fmt.Errorf("%s accepts exactly one video input", args[0])
 	}
+	if hasProtocolInput(args[1]) {
+		return Command{}, fmt.Errorf("%s accepts local video file paths only", args[0])
+	}
 	return Command{Kind: kind, InputPath: args[1]}, nil
+}
+
+func hasProtocolInput(input string) bool {
+	if input == "-" {
+		return true
+	}
+	colon := strings.IndexByte(input, ':')
+	if colon <= 0 {
+		return false
+	}
+	scheme := input[:colon]
+	if len(scheme) == 1 {
+		rest := input[colon+1:]
+		if strings.HasPrefix(rest, `\`) || strings.HasPrefix(rest, `/`) {
+			return false
+		}
+	}
+	for i, r := range scheme {
+		if i == 0 && !unicode.IsLetter(r) {
+			return false
+		}
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '+' && r != '-' && r != '.' {
+			return false
+		}
+	}
+	return true
 }

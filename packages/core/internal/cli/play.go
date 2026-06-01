@@ -80,7 +80,13 @@ func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Wr
 	}
 	defer presenter.Stop()
 
-	playErr := player.Play(ctx, frames, presenter, info.FPS)
+	controls, stopControls, err := startPlaybackControls(ctx, cancel, stdin)
+	if err != nil {
+		return err
+	}
+	defer stopControls()
+
+	playErr := player.PlayWithControls(ctx, frames, presenter, info.FPS, controls)
 	ctxErr := ctx.Err()
 	if ctxErr != nil || playErr != nil {
 		cancel()
@@ -121,9 +127,63 @@ func waitDecoder(pipe io.Closer, decoderDone <-chan error) error {
 	return <-decoderDone
 }
 
+func startPlaybackControls(ctx context.Context, cancel context.CancelFunc, stdin *os.File) (<-chan player.Control, func(), error) {
+	fd := int(stdin.Fd())
+	if !xterm.IsTerminal(fd) {
+		return nil, func() {}, nil
+	}
+
+	state, err := xterm.MakeRaw(fd)
+	if err != nil {
+		return nil, nil, fmt.Errorf("enable playback controls: %w", err)
+	}
+
+	controlCtx, stopControls := context.WithCancel(ctx)
+	terminalControls := make(chan terminal.Control, 4)
+	playerControls := make(chan player.Control, 4)
+
+	go terminal.ReadControls(controlCtx, stdin, terminalControls)
+	go bridgeTerminalControls(controlCtx, cancel, terminalControls, playerControls)
+
+	cleanup := func() {
+		stopControls()
+		_ = xterm.Restore(fd, state)
+	}
+	return playerControls, cleanup, nil
+}
+
+func bridgeTerminalControls(ctx context.Context, cancel context.CancelFunc, in <-chan terminal.Control, out chan<- player.Control) {
+	defer close(out)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case control, ok := <-in:
+			if !ok {
+				return
+			}
+			var playerControl player.Control
+			switch control {
+			case terminal.Quit:
+				playerControl = player.Quit
+				cancel()
+			case terminal.TogglePause:
+				playerControl = player.TogglePause
+			default:
+				continue
+			}
+			select {
+			case out <- playerControl:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
+}
+
 func playbackResult(ctxErr error, playErr error, renderErr error, decoderErr error) error {
-	wasCancelled := ctxErr != nil || errors.Is(playErr, player.ErrCancelled)
-	if errors.Is(playErr, player.ErrCancelled) {
+	wasCancelled := ctxErr != nil || errors.Is(playErr, player.ErrCancelled) || errors.Is(playErr, player.ErrQuit)
+	if errors.Is(playErr, player.ErrCancelled) || errors.Is(playErr, player.ErrQuit) {
 		playErr = nil
 	}
 	if playErr != nil {

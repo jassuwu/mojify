@@ -24,7 +24,7 @@ func ReadControls(ctx context.Context, r io.Reader, out chan<- Control) {
 		n, err := r.Read(buf)
 		if n > 0 {
 			switch buf[0] {
-			case 'q', 'Q':
+			case 'q', 'Q', 3:
 				sendControl(ctx, out, Quit)
 				return
 			case ' ':

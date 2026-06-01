@@ -42,6 +42,23 @@ func TestParseMissingInput(t *testing.T) {
 	}
 }
 
+func TestParseRejectsProtocolInputs(t *testing.T) {
+	for _, command := range []string{"play", "probe"} {
+		for _, input := range []string{
+			"https://example.com/demo.mp4",
+			"file:///tmp/demo.mp4",
+			"pipe:0",
+			"concat:part1.mp4|part2.mp4",
+			"-",
+		} {
+			_, err := Parse([]string{command, input})
+			if err == nil {
+				t.Fatalf("Parse accepted non-local %s input %q", command, input)
+			}
+		}
+	}
+}
+
 func TestHelpTextMentionsCommands(t *testing.T) {
 	help := HelpText()
 	for _, want := range []string{

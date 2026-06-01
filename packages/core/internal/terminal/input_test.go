@@ -23,6 +23,19 @@ func TestReadControlsEmitsPauseAndQuit(t *testing.T) {
 	}
 }
 
+func TestReadControlsTreatsCtrlCAsQuit(t *testing.T) {
+	out := make(chan Control, 1)
+	ReadControls(context.Background(), strings.NewReader(string([]byte{3})), out)
+
+	got, ok := <-out
+	if !ok {
+		t.Fatal("ReadControls closed without emitting Ctrl-C quit")
+	}
+	if got != Quit {
+		t.Fatalf("control = %v, want %v", got, Quit)
+	}
+}
+
 func TestReadControlsReturnsWhenCancelledBeforeSend(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	out := make(chan Control)

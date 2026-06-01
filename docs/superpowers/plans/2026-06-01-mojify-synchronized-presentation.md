@@ -16,6 +16,7 @@
 - Primary acceptance: visual QA improvement first, with playback metrics as regression guards.
 - First mechanism: synchronized presentation before frame diffing.
 - Fallback: synchronized presentation is best-effort and enabled by default.
+- Best-effort fallback is passive: Mojify emits synchronized-update markers, and terminals that ignore them continue to show the same frame content. No terminal probing or automatic disable path is included.
 - CLI surface: no new user-facing flag in this stage.
 - Out of scope: frame diffing, renderer changes, lower fidelity rendering, terminal capability probing, audio, export, URL input, packaging.
 - Average bytes per frame may increase slightly because synchronized-update markers add control bytes.
@@ -142,7 +143,62 @@ Keep the `Stop` assertion as:
 	}
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [ ] **Step 2: Add failing synchronized write error tests**
+
+Add these tests and helper writer to `packages/core/internal/terminal/presenter_test.go` after `TestPresenterDoesNotRecordPresentedFrameOnWriteError`:
+
+```go
+func TestWriteSynchronizedFrameReturnsFrameWriteError(t *testing.T) {
+	writer := failAfterWriter{limit: len(BeginSynchronizedUpdate) + 1}
+
+	n, err := writeSynchronizedFrame(&writer, "frame")
+	if err == nil {
+		t.Fatal("writeSynchronizedFrame returned nil error")
+	}
+	if n != writer.limit {
+		t.Fatalf("written bytes = %d, want %d", n, writer.limit)
+	}
+	if got, want := writer.String(), BeginSynchronizedUpdate+"f"; got != want {
+		t.Fatalf("written output = %q, want %q", got, want)
+	}
+}
+
+func TestWriteSynchronizedFrameReturnsEndWriteError(t *testing.T) {
+	writer := failAfterWriter{limit: len(BeginSynchronizedUpdate) + len("frame") + 1}
+
+	n, err := writeSynchronizedFrame(&writer, "frame")
+	if err == nil {
+		t.Fatal("writeSynchronizedFrame returned nil error")
+	}
+	if n != writer.limit {
+		t.Fatalf("written bytes = %d, want %d", n, writer.limit)
+	}
+	if got, want := writer.String(), BeginSynchronizedUpdate+"frame"+EndSynchronizedUpdate[:1]; got != want {
+		t.Fatalf("written output = %q, want %q", got, want)
+	}
+}
+
+type failAfterWriter struct {
+	bytes.Buffer
+	limit int
+}
+
+func (w *failAfterWriter) Write(p []byte) (int, error) {
+	remaining := w.limit - w.Len()
+	if remaining <= 0 {
+		return 0, errors.New("write failed")
+	}
+	if remaining < len(p) {
+		w.Buffer.Write(p[:remaining])
+		return remaining, errors.New("write failed")
+	}
+	return w.Buffer.Write(p)
+}
+```
+
+`presenter_test.go` already imports `bytes` and `errors`; keep those imports.
+
+- [ ] **Step 3: Run test to verify failure**
 
 Run:
 
@@ -155,9 +211,10 @@ Expected:
 ```text
 FAIL
 Present wrote "\x1b[H..." want "\x1b[?2026h\x1b[H...\x1b[?2026l"
+undefined: writeSynchronizedFrame
 ```
 
-- [ ] **Step 3: Implement synchronized frame writing**
+- [ ] **Step 4: Implement synchronized frame writing**
 
 Modify `packages/core/internal/terminal/presenter.go` so `Present` calls a helper that writes begin marker, serialized frame, and end marker:
 
@@ -196,7 +253,7 @@ func writeSynchronizedFrame(w io.Writer, output string) (int, error) {
 
 Do not wrap `Start` or `Stop`; only frame presentation should be synchronized.
 
-- [ ] **Step 4: Run presenter tests**
+- [ ] **Step 5: Run presenter tests**
 
 Run:
 
@@ -211,7 +268,7 @@ Expected:
 ok  	github.com/jass/mojify/packages/core/internal/terminal
 ```
 
-- [ ] **Step 5: Verify metrics count synchronized output bytes**
+- [ ] **Step 6: Verify metrics count synchronized output bytes**
 
 Run:
 
@@ -227,7 +284,7 @@ ok  	github.com/jass/mojify/packages/core/internal/terminal
 
 The existing `AverageBytesPerFrame == out.Len()` assertion must continue to pass, which means stats include the synchronized-update marker bytes.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add packages/core/internal/terminal/presenter.go packages/core/internal/terminal/presenter_test.go
@@ -290,6 +347,7 @@ For synchronized presentation, visual QA is the acceptance gate. Metrics are gua
 
 - Effective FPS should not materially regress against the previous `--stats` baseline for the same clip and terminal size.
 - Presented frames should not materially regress against the previous `--stats` baseline for the same clip and terminal size.
+- The comparison point is the prior playback-quality baseline `--stats` run for the same clip, terminal app, and terminal size. If no prior run is available, record the current run as the new comparison point and do not claim a metrics improvement.
 - Average bytes per frame may increase slightly because synchronized-update markers add terminal control bytes.
 ```
 
@@ -376,9 +434,11 @@ Run in a real terminal:
 
 ```bash
 ./bin/mojify play --stats dist/qa/low-motion-bars.mp4
+./bin/mojify play --stats dist/qa/high-motion-testsrc.mp4
+./bin/mojify play --stats dist/qa/high-contrast-grid.mp4
 ```
 
-During playback:
+During each playback:
 
 ```text
 press Space once to pause
@@ -393,6 +453,7 @@ alternate screen exits cleanly
 cursor is restored
 stats summary prints after exit
 no obvious top-to-bottom repaint wave in a terminal that supports synchronized updates
+if the terminal ignores synchronized updates, frame content remains correct and playback still exits cleanly
 ```
 
 - [ ] **Step 4: Review scope**
@@ -401,7 +462,7 @@ Run:
 
 ```bash
 git diff --stat main...HEAD
-git diff main...HEAD -- packages/core/internal/terminal README.md docs/qa package.json scripts | rg -n "diff|dirty region|seek|audio|export|url|--no-sync|--sync|renderer recipe|lower resolution|256-color"
+git diff main...HEAD -- packages/core/internal/terminal packages/core/internal/cli packages/core/cmd README.md docs/qa package.json scripts | rg -n "diff|dirty region|seek|audio|export|url|--no-sync|--sync|renderer recipe|lower resolution|256-color"
 ```
 
 Expected:

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/jass/mojify/packages/core/internal/cli"
 	"github.com/jass/mojify/packages/core/internal/media"
@@ -22,8 +25,12 @@ func main() {
 	case cli.HelpCommand:
 		fmt.Print(cli.HelpText())
 	case cli.PlayCommand:
-		fmt.Fprintf(os.Stderr, "mojify play is not implemented yet: %s\n", cmd.InputPath)
-		os.Exit(1)
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		if err := cli.RunPlay(ctx, cmd.InputPath, os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintf(os.Stderr, "play failed: %v\n", err)
+			os.Exit(1)
+		}
 	case cli.ProbeCommand:
 		info, err := media.Probe(cmd.InputPath)
 		if err != nil {

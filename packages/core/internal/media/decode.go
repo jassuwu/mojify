@@ -1,6 +1,7 @@
 package media
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os/exec"
@@ -23,7 +24,11 @@ func DecodeArgs(path string, width int, height int) []string {
 }
 
 func StartDecoder(path string, width int, height int) (*exec.Cmd, io.ReadCloser, error) {
-	cmd := exec.Command("ffmpeg", DecodeArgs(path, width, height)...)
+	return StartDecoderContext(context.Background(), path, width, height)
+}
+
+func StartDecoderContext(ctx context.Context, path string, width int, height int) (*exec.Cmd, io.ReadCloser, error) {
+	cmd := exec.CommandContext(ctx, "ffmpeg", DecodeArgs(path, width, height)...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, nil, err

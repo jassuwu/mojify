@@ -2,6 +2,7 @@ package media
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
@@ -18,7 +19,11 @@ type Info struct {
 }
 
 func Probe(path string) (Info, error) {
-	cmd := exec.Command("ffprobe", "-v", "error", "-print_format", "json", "-show_streams", "-show_format", path)
+	return ProbeContext(context.Background(), path)
+}
+
+func ProbeContext(ctx context.Context, path string) (Info, error) {
+	cmd := exec.CommandContext(ctx, "ffprobe", "-v", "error", "-print_format", "json", "-show_streams", "-show_format", path)
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr

@@ -101,6 +101,7 @@ After the workflow passes, test Homebrew installation:
 brew update
 brew install jassuwu/tap/mojify
 mojify --version
+bun run qa:clips
 mojify probe ./dist/qa/low-motion-bars.mp4
 ```
 

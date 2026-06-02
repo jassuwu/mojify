@@ -21,13 +21,18 @@ Use either method for normal installs instead of source builds.
 
 ## Requirements
 
-- Go 1.23+
-- Bun 1.3+
 - FFmpeg and ffprobe on `PATH`
 - yt-dlp on `PATH` for platform URL inputs
 - ffplay on `PATH` for live playback audio
 
-## Run
+Homebrew installs declare `ffmpeg` and `yt-dlp`. Tarball installs require these tools to be installed separately.
+
+## Development Requirements
+
+- Go 1.23+
+- Bun 1.3+
+
+## Run From Source
 
 ```bash
 bun install

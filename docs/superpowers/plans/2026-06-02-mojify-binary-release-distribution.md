@@ -600,16 +600,30 @@ jobs:
       - name: Test
         run: go test ./...
 
+      - name: Build GoReleaser smoke artifact
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: build --clean --single-target
+
       - name: Version smoke
         shell: bash
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          go build \
-            -ldflags "-X github.com/jass/mojify/packages/core/internal/cli.version=${version}" \
-            -o /tmp/mojify \
-            ./packages/core/cmd/mojify
-          /tmp/mojify --version
+          expected="mojify ${GITHUB_REF_NAME#v}"
+          binary="$(find dist -type f -name mojify -perm -111 | head -n 1)"
+          if [[ -z "$binary" ]]; then
+            echo "GoReleaser smoke build did not produce a mojify binary." >&2
+            exit 1
+          fi
+          actual="$("$binary" --version)"
+          if [[ "$actual" != "$expected" ]]; then
+            echo "Unexpected version output from $binary" >&2
+            echo "Expected: $expected" >&2
+            echo "Actual:   $actual" >&2
+            exit 1
+          fi
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
@@ -753,6 +767,7 @@ After the workflow passes, test Homebrew installation:
 brew update
 brew install jassuwu/tap/mojify
 mojify --version
+bun run qa:clips
 mojify probe ./dist/qa/low-motion-bars.mp4
 ```
 
@@ -807,7 +822,24 @@ Download the matching tarball for your platform from the [GitHub Releases](https
 Windows support is WSL-only for now. Native Windows binaries are deferred.
 ```
 
-Keep the existing `## Requirements`, `## Run`, `## Playback QA`, `## Export QA`, and `## Scope` sections after the new installation section.
+Keep the existing playback/export/scope content after the new installation section, but split user runtime requirements from source-development requirements:
+
+```markdown
+## Requirements
+
+- FFmpeg and ffprobe on `PATH`
+- yt-dlp on `PATH` for platform URL inputs
+- ffplay on `PATH` for live playback audio
+
+Homebrew installs declare `ffmpeg` and `yt-dlp`. Tarball installs require these tools to be installed separately.
+
+## Development Requirements
+
+- Go 1.23+
+- Bun 1.3+
+
+## Run From Source
+```
 
 - [ ] **Step 3: Verify docs do not contain secret values**
 

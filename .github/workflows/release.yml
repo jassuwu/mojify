@@ -40,16 +40,30 @@ jobs:
       - name: Test
         run: go test ./...
 
+      - name: Build GoReleaser smoke artifact
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: build --clean --single-target
+
       - name: Version smoke
         shell: bash
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          go build \
-            -ldflags "-X github.com/jass/mojify/packages/core/internal/cli.version=${version}" \
-            -o /tmp/mojify \
-            ./packages/core/cmd/mojify
-          /tmp/mojify --version
+          expected="mojify ${GITHUB_REF_NAME#v}"
+          binary="$(find dist -type f -name mojify -perm -111 | head -n 1)"
+          if [[ -z "$binary" ]]; then
+            echo "GoReleaser smoke build did not produce a mojify binary." >&2
+            exit 1
+          fi
+          actual="$("$binary" --version)"
+          if [[ "$actual" != "$expected" ]]; then
+            echo "Unexpected version output from $binary" >&2
+            echo "Expected: $expected" >&2
+            echo "Actual:   $actual" >&2
+            exit 1
+          fi
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7

@@ -120,6 +120,7 @@ jobs:
           set -euo pipefail
           brew tap jassuwu/tap "$PWD/homebrew-tap"
           tap_dir="$(brew --repository jassuwu/tap)"
+          mkdir -p "$tap_dir/Formula"
           cp homebrew-tap/Formula/mojify.rb "$tap_dir/Formula/mojify.rb"
           brew audit --formula jassuwu/tap/mojify
           brew install --build-from-source jassuwu/tap/mojify

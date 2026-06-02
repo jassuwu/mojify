@@ -17,6 +17,7 @@ brew install jassuwu/tap/mojify
 Download the matching tarball for your platform from the [GitHub Releases](https://github.com/jassuwu/mojify/releases), then place `mojify` on your `PATH`.
 
 Windows support is WSL-only for now. Native Windows binaries are deferred.
+Use either method for normal installs instead of source builds.
 
 ## Requirements
 

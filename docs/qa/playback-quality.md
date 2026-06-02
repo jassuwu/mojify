@@ -43,6 +43,9 @@ For each clip:
 - Playback does not show distracting full-screen flashing.
 - Playback does not show obvious top-to-bottom repaint waves at normal terminal size.
 - Synchronized presentation does not introduce visible stalling, tearing, or delayed frame bursts.
+- Frame-diffed presentation does not leave stale characters or stale colors.
+- Frame-diffed presentation does not show cursor-positioning artifacts, bottom-row glitches, or visible patch trails.
+- In Ghostty, frame-diffed presentation is visibly less distracting than the current `main` baseline at the same terminal size.
 - The stats summary appears after exit.
 - The stats summary includes render grid, rendered frames, presented frames, skipped frames, effective FPS, average render time, average present time, and average bytes per frame.
 
@@ -57,6 +60,10 @@ Capture these observations when comparing changes:
 - Whether repainting is distracting.
 - Whether timing feels continuous.
 - Stats summary.
+- Current `main` baseline commit used for comparison.
+- Whether frame-diffed presentation visibly improves Ghostty playback against that baseline.
+- Whether full-screen clears or obvious repaint waves remain noticeable.
+- Average bytes per frame before and after frame-diffed presentation.
 
 ## Regression Guardrails
 
@@ -66,3 +73,12 @@ For synchronized presentation, visual QA is the acceptance gate. Metrics are gua
 - Presented frames should not materially regress against the previous `--stats` baseline for the same clip, terminal app, and terminal size.
 - If no prior baseline exists for that clip, terminal app, and terminal size, record the current stats as the comparison point and do not claim a metrics improvement.
 - Average bytes per frame may increase slightly because synchronized-update markers add terminal control bytes.
+
+For frame-diffed presentation, Ghostty-visible improvement is required:
+
+- Compare against the current `main` baseline at the same Ghostty version and terminal size.
+- Low-motion generated clips should show a material average-bytes-per-frame reduction.
+- High-motion generated clips may show a smaller byte reduction because more cells genuinely change.
+- Effective FPS and presented frames should not materially regress against the current `main` baseline.
+- Real ignored `dist/` videos should be included as manual acceptance references.
+- Do not call the stage successful if Ghostty playback still looks like full-screen clear/repaint, even when unit tests pass.

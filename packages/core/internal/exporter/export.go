@@ -13,7 +13,7 @@ import (
 )
 
 func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options Options) (err error) {
-	if err := checkOutputPath(outputPath, options); err != nil {
+	if err := CheckOutputPath(outputPath, options); err != nil {
 		return err
 	}
 
@@ -34,7 +34,11 @@ func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr 
 		}, layout, options),
 		Now: options.ProgressClock,
 	})
-	progress.Start(inputPath, outputPath, layout)
+	inputLabel := options.InputLabel
+	if inputLabel == "" {
+		inputLabel = inputPath
+	}
+	progress.Start(inputLabel, outputPath, layout)
 	defer func() {
 		if err != nil {
 			progress.ErrorLine()
@@ -143,7 +147,7 @@ func printExportStats(w io.Writer, options Options, metrics *exportMetrics) {
 	_, _ = fmt.Fprint(w, metrics.Summary())
 }
 
-func checkOutputPath(outputPath string, options Options) error {
+func CheckOutputPath(outputPath string, options Options) error {
 	if outputPath == "" {
 		return fmt.Errorf("missing output path")
 	}
@@ -155,6 +159,10 @@ func checkOutputPath(outputPath string, options Options) error {
 		return fmt.Errorf("stat output: %w", err)
 	}
 	return nil
+}
+
+func checkOutputPath(outputPath string, options Options) error {
+	return CheckOutputPath(outputPath, options)
 }
 
 func cleanupProcess(cmd *exec.Cmd, pipe io.Closer) error {

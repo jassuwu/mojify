@@ -227,27 +227,65 @@ func TestParseExportRejectsExtraInputs(t *testing.T) {
 	}
 }
 
-func TestParseRejectsProtocolInputs(t *testing.T) {
+func TestParseAcceptsHTTPSources(t *testing.T) {
 	for _, command := range []string{"play", "probe"} {
 		for _, input := range []string{
-			"https://example.com/demo.mp4",
-			"file:///tmp/demo.mp4",
-			"pipe:0",
-			"concat:part1.mp4|part2.mp4",
-			"-",
+			"https://example.com/watch?v=demo",
+			"http://example.com/video",
 		} {
-			_, err := Parse([]string{command, input})
-			if err == nil {
-				t.Fatalf("Parse accepted non-local %s input %q", command, input)
+			cmd, err := Parse([]string{command, input})
+			if err != nil {
+				t.Fatalf("Parse(%s %q) returned error: %v", command, input, err)
+			}
+			if cmd.InputPath != input {
+				t.Fatalf("InputPath = %q, want %q", cmd.InputPath, input)
 			}
 		}
 	}
 }
 
-func TestParseExportRejectsProtocolInput(t *testing.T) {
-	_, err := Parse([]string{"export", "https://example.com/demo.mp4", "clip.mp4"})
-	if err == nil {
-		t.Fatal("Parse returned nil error for protocol export input")
+func TestParseExportAcceptsHTTPSource(t *testing.T) {
+	cmd, err := Parse([]string{"export", "https://example.com/watch?v=demo", "clip.mp4"})
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+	if cmd.InputPath != "https://example.com/watch?v=demo" {
+		t.Fatalf("InputPath = %q, want URL source", cmd.InputPath)
+	}
+	if cmd.OutputPath != "clip.mp4" {
+		t.Fatalf("OutputPath = %q, want clip.mp4", cmd.OutputPath)
+	}
+}
+
+func TestParseRejectsUnsupportedProtocolInputs(t *testing.T) {
+	for _, command := range []string{"play", "probe"} {
+		for _, input := range []string{
+			"file:///tmp/demo.mp4",
+			"pipe:0",
+			"concat:part1.mp4|part2.mp4",
+			"ytsearch:demo query",
+			"-",
+		} {
+			_, err := Parse([]string{command, input})
+			if err == nil {
+				t.Fatalf("Parse accepted unsupported %s input %q", command, input)
+			}
+		}
+	}
+}
+
+func TestParseExportRejectsUnsupportedProtocolInput(t *testing.T) {
+	for _, input := range []string{
+		"file:///tmp/demo.mp4",
+		"pipe:0",
+		"concat:part1.mp4|part2.mp4",
+		"ytsearch:demo query",
+		"-",
+	} {
+		_, err := Parse([]string{"export", input, "clip.mp4"})
+		if err == nil {
+			t.Fatalf("Parse returned nil error for unsupported export input %q", input)
+		}
 	}
 }
 
@@ -296,12 +334,14 @@ func TestParseExportRejectsUnknownOption(t *testing.T) {
 func TestHelpTextMentionsCommands(t *testing.T) {
 	help := HelpText()
 	for _, want := range []string{
-		"mojify play [--stats] [--no-audio] <video>",
-		"Play a local video file in the terminal",
-		"mojify probe <video>",
-		"Print media and render metadata",
-		"mojify export [options] <video> <output.mp4>",
+		"mojify play [--stats] [--no-audio] <source>",
+		"Play source media in the terminal",
+		"mojify probe <source>",
+		"Print source media and render metadata",
+		"mojify export [options] <source> <output.mp4>",
 		"Export Mojify visuals to an MP4 file",
+		"<source> may be a local video file or an HTTP(S) platform URL",
+		"yt-dlp is required for platform URL inputs",
 		"--width <px>",
 		"--fps <n>",
 		"--bitrate <value>",

@@ -2,6 +2,8 @@
 
 Playback quality hardening uses generated synthetic clips as the repeatable baseline and ignored real clips as optional manual references.
 
+Platform URL playback is covered by the cross-command checklist in `docs/qa/platform-media-input.md`.
+
 ## Generate Clips
 
 ```bash

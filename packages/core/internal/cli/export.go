@@ -9,8 +9,17 @@ import (
 	xterm "golang.org/x/term"
 )
 
+type exportRunnerOptions struct {
+	YTDLPPath string
+	ExportMP4 func(context.Context, string, string, io.Writer, exporter.Options) error
+}
+
 func RunExport(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options ExportOptions) error {
-	return exporter.ExportMP4(ctx, inputPath, outputPath, stderr, exporter.Options{
+	return runExportWithOptions(ctx, inputPath, outputPath, stderr, options, exportRunnerOptions{})
+}
+
+func runExportWithOptions(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options ExportOptions, runnerOptions exportRunnerOptions) error {
+	exportOptions := exporter.Options{
 		Width:               options.Width,
 		FPS:                 options.FPS,
 		Bitrate:             options.Bitrate,
@@ -18,7 +27,26 @@ func RunExport(ctx context.Context, inputPath string, outputPath string, stderr 
 		ProgressInteractive: isTerminalWriter(stderr),
 		Stats:               options.Stats,
 		Workers:             options.Workers,
+		InputLabel:          inputPath,
+	}
+	if err := exporter.CheckOutputPath(outputPath, exportOptions); err != nil {
+		return err
+	}
+
+	resolved, err := resolveSourceMediaWithOptions(ctx, inputPath, sourceResolverOptions{
+		Stderr:    stderr,
+		YTDLPPath: runnerOptions.YTDLPPath,
 	})
+	if err != nil {
+		return err
+	}
+	defer resolved.Cleanup()
+
+	exportMP4 := runnerOptions.ExportMP4
+	if exportMP4 == nil {
+		exportMP4 = exporter.ExportMP4
+	}
+	return exportMP4(ctx, resolved.Path, outputPath, stderr, exportOptions)
 }
 
 func isTerminalWriter(writer io.Writer) bool {

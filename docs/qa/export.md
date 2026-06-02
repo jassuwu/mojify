@@ -2,6 +2,8 @@
 
 MP4 export QA uses generated clips for a repeatable smoke test and ignored real clips under `dist/` for optional source-audio verification.
 
+Platform URL export is covered by the cross-command checklist in `docs/qa/platform-media-input.md`.
+
 ## Canonical Smoke
 
 ```bash

@@ -23,11 +23,34 @@ type PlayOptions struct {
 	NoAudio bool
 }
 
+type playRunnerOptions struct {
+	YTDLPPath string
+	Probe     func(context.Context, string) (media.Info, error)
+}
+
 func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Writer, stderr io.Writer, options PlayOptions) error {
+	return runPlayWithOptions(ctx, inputPath, stdin, stdout, stderr, options, playRunnerOptions{})
+}
+
+func runPlayWithOptions(ctx context.Context, inputPath string, stdin *os.File, stdout io.Writer, stderr io.Writer, options PlayOptions, runnerOptions playRunnerOptions) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	info, err := media.ProbeContext(ctx, inputPath)
+	resolved, err := resolveSourceMediaWithOptions(ctx, inputPath, sourceResolverOptions{
+		Stderr:    stderr,
+		YTDLPPath: runnerOptions.YTDLPPath,
+	})
+	if err != nil {
+		return err
+	}
+	defer resolved.Cleanup()
+	inputPath = resolved.Path
+
+	probe := runnerOptions.Probe
+	if probe == nil {
+		probe = media.ProbeContext
+	}
+	info, err := probe(ctx, inputPath)
 	if err != nil {
 		return fmt.Errorf("probe input: %w", err)
 	}

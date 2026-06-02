@@ -61,10 +61,13 @@ func HelpText() string {
 Terminal-first video playback with colored, edge-aware character frames.
 
 Usage:
-  mojify play [--stats] [--no-audio] <video>            Play a local video file in the terminal
-  mojify probe <video>                                  Print media and render metadata
-  mojify export [options] <video> <output.mp4>          Export Mojify visuals to an MP4 file
+  mojify play [--stats] [--no-audio] <source>           Play source media in the terminal
+  mojify probe <source>                                 Print source media and render metadata
+  mojify export [options] <source> <output.mp4>         Export Mojify visuals to an MP4 file
   mojify --help                                         Show this help
+
+Source:
+  <source> may be a local video file or an HTTP(S) platform URL.
 
 Play options:
   --stats             Print playback timing stats after completion
@@ -80,6 +83,7 @@ Export options:
 
 Requirements:
   FFmpeg and ffprobe must be available on PATH.
+  yt-dlp is required for platform URL inputs.
   ffplay is required for live playback audio unless --no-audio is used.
 `
 }
@@ -120,8 +124,8 @@ func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 	if inputPath == "" {
 		return Command{}, fmt.Errorf("%s requires a video input", args[0])
 	}
-	if hasProtocolInput(inputPath) {
-		return Command{}, fmt.Errorf("%s accepts local video file paths only", args[0])
+	if hasUnsupportedSourceProtocol(inputPath) {
+		return Command{}, fmt.Errorf("%s accepts local video file paths or HTTP(S) platform URLs only", args[0])
 	}
 	return Command{Kind: kind, InputPath: inputPath, Stats: stats, NoAudio: noAudio}, nil
 }
@@ -202,8 +206,8 @@ func parseExportCommand(args []string) (Command, error) {
 	if len(paths) != 2 {
 		return Command{}, fmt.Errorf("export requires an input video and output MP4 path")
 	}
-	if hasProtocolInput(paths[0]) {
-		return Command{}, fmt.Errorf("export accepts local video file paths only")
+	if hasUnsupportedSourceProtocol(paths[0]) {
+		return Command{}, fmt.Errorf("export accepts local video file paths or HTTP(S) platform URLs only")
 	}
 	if hasProtocolInput(paths[1]) {
 		return Command{}, fmt.Errorf("export accepts local output file paths only")
@@ -238,6 +242,18 @@ func isValidExportBitrate(value string) bool {
 		}
 	}
 	return true
+}
+
+func isHTTPSource(input string) bool {
+	lower := strings.ToLower(input)
+	return strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://")
+}
+
+func hasUnsupportedSourceProtocol(input string) bool {
+	if isHTTPSource(input) {
+		return false
+	}
+	return hasProtocolInput(input)
 }
 
 func hasProtocolInput(input string) bool {

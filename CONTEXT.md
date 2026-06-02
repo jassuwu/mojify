@@ -13,12 +13,20 @@ The v1 product shape for Mojify: terminal playback is the primary use case, and 
 _Avoid_: General media converter, ASCII toolkit, recipe platform
 
 **Source media**:
-A local video file accepted as input by Mojify v1.
-_Avoid_: YouTube URL, remote URL, stream
+The media accepted as input by Mojify v1: either a local video file or a platform URL that Mojify resolves into a temporary local media file before processing.
+_Avoid_: Live stream, stdin stream, unresolved URL stream
+
+**Source**:
+The CLI argument name for source media accepted by `probe`, `play`, and `export`.
+_Avoid_: Video argument, URL-only argument, input stream
 
 **Decoder**:
 The FFmpeg CLI process that turns source media into raw video frames for Mojify v1.
 _Avoid_: FFmpeg bindings, codec engine
+
+**Platform media input**:
+The product utility stage that lets Mojify accept yt-dlp-compatible URLs by resolving them to temporary local source media before running probe, playback, or export.
+_Avoid_: URL streaming, browser extraction, playlist workflow
 
 **Playback**:
 Terminal playback of Mojify character frames from source media. Playback may include live terminal audio when the source has audio and audio has not been explicitly disabled.

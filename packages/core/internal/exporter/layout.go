@@ -22,6 +22,7 @@ type Options struct {
 	Stats               bool
 	Workers             int
 	MetricsClock        func() time.Time
+	InputLabel          string
 }
 
 type InputInfo struct {

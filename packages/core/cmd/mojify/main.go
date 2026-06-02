@@ -8,8 +8,6 @@ import (
 	"syscall"
 
 	"github.com/jass/mojify/packages/core/internal/cli"
-	"github.com/jass/mojify/packages/core/internal/media"
-	"github.com/jass/mojify/packages/core/internal/render"
 )
 
 func main() {
@@ -39,26 +37,12 @@ func main() {
 			os.Exit(1)
 		}
 	case cli.ProbeCommand:
-		info, err := media.Probe(cmd.InputPath)
-		if err != nil {
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		if err := cli.RunProbe(ctx, cmd.InputPath, os.Stdout, os.Stderr); err != nil {
 			fmt.Fprintf(os.Stderr, "probe failed: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("input: %s\n", cmd.InputPath)
-		fmt.Printf("video: %dx%d\n", info.Width, info.Height)
-		fmt.Printf("fps: %.3f\n", info.FPS)
-		fmt.Printf("frames: %d\n", info.FrameCount)
-		fmt.Printf("duration: %.3fs\n", info.DurationSeconds)
-		if info.HasAudio {
-			fmt.Println("audio: yes")
-		} else {
-			fmt.Println("audio: no")
-		}
-		grid := render.FitGrid(
-			render.InputSize{Width: info.Width, Height: info.Height},
-			render.TerminalSize{Cols: 120, Rows: 40},
-		)
-		fmt.Printf("render-grid: %dx%d (sample terminal 120x40)\n", grid.Cols, grid.Rows)
 	case cli.ExportCommand:
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()

@@ -57,3 +57,53 @@ func TestParseProbeJSONRejectsMissingVideoDimensions(t *testing.T) {
 		t.Fatal("ParseProbeJSON returned nil error for missing dimensions")
 	}
 }
+
+func TestParseProbeJSONDetectsAudioStream(t *testing.T) {
+	const input = `{
+	  "streams": [
+	    {
+	      "codec_type": "audio",
+	      "codec_name": "aac"
+	    },
+	    {
+	      "codec_type": "video",
+	      "width": 1280,
+	      "height": 720,
+	      "avg_frame_rate": "24/1",
+	      "nb_frames": "48"
+	    }
+	  ],
+	  "format": { "duration": "2.000000" }
+	}`
+
+	info, err := ParseProbeJSON([]byte(input))
+	if err != nil {
+		t.Fatalf("ParseProbeJSON returned error: %v", err)
+	}
+	if !info.HasAudio {
+		t.Fatal("HasAudio = false, want true")
+	}
+}
+
+func TestParseProbeJSONReportsNoAudioStream(t *testing.T) {
+	const input = `{
+	  "streams": [
+	    {
+	      "codec_type": "video",
+	      "width": 1280,
+	      "height": 720,
+	      "avg_frame_rate": "24/1",
+	      "nb_frames": "48"
+	    }
+	  ],
+	  "format": { "duration": "2.000000" }
+	}`
+
+	info, err := ParseProbeJSON([]byte(input))
+	if err != nil {
+		t.Fatalf("ParseProbeJSON returned error: %v", err)
+	}
+	if info.HasAudio {
+		t.Fatal("HasAudio = true, want false")
+	}
+}

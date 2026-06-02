@@ -16,6 +16,7 @@ type Info struct {
 	FPS             float64
 	FrameCount      int
 	DurationSeconds float64
+	HasAudio        bool
 }
 
 func Probe(path string) (Info, error) {
@@ -43,6 +44,14 @@ func ParseProbeJSON(data []byte) (Info, error) {
 	var probe probeJSON
 	if err := json.Unmarshal(data, &probe); err != nil {
 		return Info{}, fmt.Errorf("parse ffprobe json: %w", err)
+	}
+
+	hasAudio := false
+	for _, stream := range probe.Streams {
+		if stream.CodecType == "audio" {
+			hasAudio = true
+			break
+		}
 	}
 
 	for _, stream := range probe.Streams {
@@ -74,6 +83,7 @@ func ParseProbeJSON(data []byte) (Info, error) {
 			FPS:             fps,
 			FrameCount:      frameCount,
 			DurationSeconds: duration,
+			HasAudio:        hasAudio,
 		}, nil
 	}
 

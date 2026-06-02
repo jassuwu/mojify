@@ -32,6 +32,7 @@ type Command struct {
 	InputPath  string
 	OutputPath string
 	Stats      bool
+	NoAudio    bool
 	Export     ExportOptions
 }
 
@@ -60,10 +61,14 @@ func HelpText() string {
 Terminal-first video playback with colored, edge-aware character frames.
 
 Usage:
-  mojify play [--stats] <video>                         Play a local video file in the terminal
+  mojify play [--stats] [--no-audio] <video>            Play a local video file in the terminal
   mojify probe <video>                                  Print media and render metadata
   mojify export [options] <video> <output.mp4>          Export Mojify visuals to an MP4 file
   mojify --help                                         Show this help
+
+Play options:
+  --stats             Print playback timing stats after completion
+  --no-audio          Disable live playback audio for play
 
 Export options:
   --width <px>        Output MP4 width in pixels
@@ -75,6 +80,7 @@ Export options:
 
 Requirements:
   FFmpeg and ffprobe must be available on PATH.
+  ffplay is required for live playback audio unless --no-audio is used.
 `
 }
 
@@ -85,6 +91,7 @@ func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 
 	var inputPath string
 	stats := false
+	noAudio := false
 	for _, arg := range args[1:] {
 		switch arg {
 		case "--stats":
@@ -95,6 +102,14 @@ func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 				return Command{}, fmt.Errorf("%s accepts --stats only once", args[0])
 			}
 			stats = true
+		case "--no-audio":
+			if kind != PlayCommand {
+				return Command{}, fmt.Errorf("%s does not accept --no-audio", args[0])
+			}
+			if noAudio {
+				return Command{}, fmt.Errorf("%s accepts --no-audio only once", args[0])
+			}
+			noAudio = true
 		default:
 			if inputPath != "" {
 				return Command{}, fmt.Errorf("%s accepts exactly one video input", args[0])
@@ -108,7 +123,7 @@ func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 	if hasProtocolInput(inputPath) {
 		return Command{}, fmt.Errorf("%s accepts local video file paths only", args[0])
 	}
-	return Command{Kind: kind, InputPath: inputPath, Stats: stats}, nil
+	return Command{Kind: kind, InputPath: inputPath, Stats: stats, NoAudio: noAudio}, nil
 }
 
 func parseExportCommand(args []string) (Command, error) {
@@ -161,6 +176,8 @@ func parseExportCommand(args []string) (Command, error) {
 			}
 			seenStats = true
 			options.Stats = true
+		case "--no-audio":
+			return Command{}, fmt.Errorf("export does not accept --no-audio")
 		case "--workers":
 			if i+1 >= len(args) {
 				return Command{}, fmt.Errorf("export requires a value for --workers")

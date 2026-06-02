@@ -21,12 +21,16 @@ The FFmpeg CLI process that turns source media into raw video frames for Mojify 
 _Avoid_: FFmpeg bindings, codec engine
 
 **Playback**:
-Visual terminal playback of character frames from source media. In v1, playback does not include audio.
-_Avoid_: Audio playback, export
+Terminal playback of Mojify character frames from source media. Playback may include live terminal audio when the source has audio and audio has not been explicitly disabled.
+_Avoid_: Export, MP4 audio muxing
 
 **Live terminal audio**:
-Audio played while Mojify presents character frames in the terminal.
+Source audio played while Mojify presents character frames in the terminal.
 _Avoid_: Exported media audio, audio muxing
+
+**Playback audio**:
+The product utility stage that adds default-on live terminal audio to `mojify play` while preserving visual playback fallback, pause/resume semantics, and reliable cleanup.
+_Avoid_: Exported media audio, audio muxing, mute controls, volume controls
 
 **MP4 export**:
 A product utility output that renders Mojify visuals into an MP4 file and preserves source audio content when available.
@@ -45,7 +49,7 @@ The bundled monospace font used to rasterize Mojify character frames into export
 _Avoid_: User terminal font, arbitrary system font
 
 **Playback controls**:
-The minimal interactive controls available during playback: quit and pause/resume.
+The minimal interactive controls available during playback: quit and pause/resume for the active playback experience, including live terminal audio when enabled.
 _Avoid_: Seeking, speed control, zoom
 
 **Playable local video**:

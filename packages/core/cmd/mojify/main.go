@@ -33,7 +33,7 @@ func main() {
 			os.Stdin,
 			os.Stdout,
 			os.Stderr,
-			cli.PlayOptions{Stats: cmd.Stats},
+			cli.PlayOptions{Stats: cmd.Stats, NoAudio: cmd.NoAudio},
 		); err != nil {
 			fmt.Fprintf(os.Stderr, "play failed: %v\n", err)
 			os.Exit(1)
@@ -49,6 +49,11 @@ func main() {
 		fmt.Printf("fps: %.3f\n", info.FPS)
 		fmt.Printf("frames: %d\n", info.FrameCount)
 		fmt.Printf("duration: %.3fs\n", info.DurationSeconds)
+		if info.HasAudio {
+			fmt.Println("audio: yes")
+		} else {
+			fmt.Println("audio: no")
+		}
 		grid := render.FitGrid(
 			render.InputSize{Width: info.Width, Height: info.Height},
 			render.TerminalSize{Cols: 120, Rows: 40},

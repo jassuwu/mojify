@@ -19,7 +19,8 @@ import (
 )
 
 type PlayOptions struct {
-	Stats bool
+	Stats   bool
+	NoAudio bool
 }
 
 func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Writer, stderr io.Writer, options PlayOptions) error {
@@ -99,7 +100,12 @@ func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Wr
 		}
 	}()
 
-	controls, stopControls, err := startPlaybackControls(ctx, cancel, stdin)
+	audio := newPlaybackAudio(playbackAudioOptions{
+		Enabled:   !options.NoAudio,
+		HasStream: info.HasAudio,
+	})
+
+	controls, stopControls, err := startPlaybackControls(ctx, cancel, stdin, audio)
 	if err != nil {
 		return err
 	}
@@ -110,7 +116,14 @@ func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Wr
 		}
 	}()
 
+	audio.Start(ctx, inputPath)
+	for _, warning := range audio.DrainWarnings() {
+		fmt.Fprintln(stderr, warning)
+	}
+	defer audio.Stop()
+
 	playErr := player.PlayWithControls(ctx, frames, &presenter, info.FPS, controls, metrics)
+	audio.Stop()
 	ctxErr := ctx.Err()
 	if ctxErr != nil || playErr != nil {
 		cancel()
@@ -145,7 +158,10 @@ func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Wr
 		resultErr = err
 	}
 	presenterStopped = true
-	printStats(stderr, options, metrics)
+	for _, warning := range audio.DrainWarnings() {
+		fmt.Fprintln(stderr, warning)
+	}
+	printStats(stderr, options, metrics, audio.Status())
 	return resultErr
 }
 
@@ -161,15 +177,20 @@ func waitDecoder(cmd *exec.Cmd) error {
 	return cmd.Wait()
 }
 
-func printStats(w io.Writer, options PlayOptions, metrics *playback.Metrics) {
+func printStats(w io.Writer, options PlayOptions, metrics *playback.Metrics, audioStatus playbackAudioStatus) {
 	if !options.Stats || metrics == nil {
 		return
 	}
 	fmt.Fprintln(w)
 	fmt.Fprint(w, metrics.Summary())
+	printAudioStats(w, audioStatus)
 }
 
-func startPlaybackControls(ctx context.Context, cancel context.CancelFunc, stdin *os.File) (<-chan player.Control, func(), error) {
+type audioPauseTarget interface {
+	TogglePause()
+}
+
+func startPlaybackControls(ctx context.Context, cancel context.CancelFunc, stdin *os.File, audio audioPauseTarget) (<-chan player.Control, func(), error) {
 	fd := int(stdin.Fd())
 	if !xterm.IsTerminal(fd) {
 		return nil, func() {}, nil
@@ -185,7 +206,7 @@ func startPlaybackControls(ctx context.Context, cancel context.CancelFunc, stdin
 	playerControls := make(chan player.Control, 4)
 
 	go terminal.ReadControls(controlCtx, stdin, terminalControls)
-	go bridgeTerminalControls(controlCtx, cancel, terminalControls, playerControls)
+	go bridgeTerminalControls(controlCtx, cancel, terminalControls, playerControls, audio)
 
 	cleanup := func() {
 		stopControls()
@@ -194,7 +215,7 @@ func startPlaybackControls(ctx context.Context, cancel context.CancelFunc, stdin
 	return playerControls, cleanup, nil
 }
 
-func bridgeTerminalControls(ctx context.Context, cancel context.CancelFunc, in <-chan terminal.Control, out chan<- player.Control) {
+func bridgeTerminalControls(ctx context.Context, cancel context.CancelFunc, in <-chan terminal.Control, out chan<- player.Control, audio audioPauseTarget) {
 	defer close(out)
 	for {
 		select {
@@ -210,6 +231,9 @@ func bridgeTerminalControls(ctx context.Context, cancel context.CancelFunc, in <
 				playerControl = player.Quit
 				cancel()
 			case terminal.TogglePause:
+				if audio != nil {
+					audio.TogglePause()
+				}
 				playerControl = player.TogglePause
 			default:
 				continue

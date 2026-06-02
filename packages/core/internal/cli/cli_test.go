@@ -54,6 +54,46 @@ func TestParsePlayStatsAfterInput(t *testing.T) {
 	}
 }
 
+func TestParsePlayNoAudioBeforeInput(t *testing.T) {
+	cmd, err := Parse([]string{"play", "--no-audio", "clip.mp4"})
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+	if cmd.Kind != PlayCommand {
+		t.Fatalf("Kind = %v, want %v", cmd.Kind, PlayCommand)
+	}
+	if cmd.InputPath != "clip.mp4" {
+		t.Fatalf("InputPath = %q, want clip.mp4", cmd.InputPath)
+	}
+	if !cmd.NoAudio {
+		t.Fatal("NoAudio = false, want true")
+	}
+}
+
+func TestParsePlayNoAudioAfterInput(t *testing.T) {
+	cmd, err := Parse([]string{"play", "clip.mp4", "--no-audio"})
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+	if !cmd.NoAudio {
+		t.Fatal("NoAudio = false, want true")
+	}
+}
+
+func TestParsePlayRejectsDuplicateNoAudio(t *testing.T) {
+	_, err := Parse([]string{"play", "--no-audio", "clip.mp4", "--no-audio"})
+	if err == nil {
+		t.Fatal("Parse returned nil error for duplicate --no-audio")
+	}
+}
+
+func TestParseRejectsNoAudioForProbe(t *testing.T) {
+	_, err := Parse([]string{"probe", "--no-audio", "clip.mp4"})
+	if err == nil {
+		t.Fatal("Parse returned nil error for probe --no-audio")
+	}
+}
+
 func TestParseRejectsStatsForProbe(t *testing.T) {
 	_, err := Parse([]string{"probe", "--stats", "clip.mp4"})
 	if err == nil {
@@ -147,6 +187,13 @@ func TestParseExportRejectsDuplicateStats(t *testing.T) {
 	_, err := Parse([]string{"export", "--stats", "clip.mov", "--stats", "clip.mp4"})
 	if err == nil {
 		t.Fatal("Parse returned nil error for duplicate export --stats")
+	}
+}
+
+func TestParseExportRejectsNoAudio(t *testing.T) {
+	_, err := Parse([]string{"export", "--no-audio", "clip.mov", "clip.mp4"})
+	if err == nil {
+		t.Fatal("Parse returned nil error for export --no-audio")
 	}
 }
 
@@ -249,7 +296,7 @@ func TestParseExportRejectsUnknownOption(t *testing.T) {
 func TestHelpTextMentionsCommands(t *testing.T) {
 	help := HelpText()
 	for _, want := range []string{
-		"mojify play [--stats] <video>",
+		"mojify play [--stats] [--no-audio] <video>",
 		"Play a local video file in the terminal",
 		"mojify probe <video>",
 		"Print media and render metadata",
@@ -260,8 +307,10 @@ func TestHelpTextMentionsCommands(t *testing.T) {
 		"--bitrate <value>",
 		"--overwrite",
 		"--stats",
+		"--no-audio",
 		"--workers <n>",
 		"FFmpeg and ffprobe",
+		"ffplay is required for live playback audio unless --no-audio is used",
 	} {
 		if !contains(help, want) {
 			t.Fatalf("HelpText() missing %q in:\n%s", want, help)

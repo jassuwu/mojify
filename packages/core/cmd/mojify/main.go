@@ -54,6 +54,19 @@ func main() {
 			render.TerminalSize{Cols: 120, Rows: 40},
 		)
 		fmt.Printf("render-grid: %dx%d (sample terminal 120x40)\n", grid.Cols, grid.Rows)
+	case cli.ExportCommand:
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		if err := cli.RunExport(
+			ctx,
+			cmd.InputPath,
+			cmd.OutputPath,
+			os.Stderr,
+			cmd.Export,
+		); err != nil {
+			fmt.Fprintf(os.Stderr, "export failed: %v\n", err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Fprintln(os.Stderr, "unknown command")
 		os.Exit(2)

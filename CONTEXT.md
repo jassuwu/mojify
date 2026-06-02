@@ -24,6 +24,18 @@ _Avoid_: FFmpeg bindings, codec engine
 Visual terminal playback of character frames from source media. In v1, playback does not include audio.
 _Avoid_: Audio playback, export
 
+**Live terminal audio**:
+Audio played while Mojify presents character frames in the terminal.
+_Avoid_: Exported media audio, audio muxing
+
+**MP4 export**:
+A product utility output that renders Mojify visuals into an MP4 file and preserves source audio content when available.
+_Avoid_: Terminal playback, silent export by default
+
+**Export font**:
+The bundled monospace font used to rasterize Mojify character frames into exported media. The preferred default is `Mx437_IBM_BIOS`.
+_Avoid_: User terminal font, arbitrary system font
+
 **Playback controls**:
 The minimal interactive controls available during playback: quit and pause/resume.
 _Avoid_: Seeking, speed control, zoom
@@ -35,6 +47,10 @@ _Avoid_: Scaffold complete, renderer-only prototype
 **Playback quality hardening**:
 The stage after playable local video: improving perceived smoothness and repeatable evaluation of terminal playback before expanding the product surface.
 _Avoid_: Audio, export, URL input, plugins, packaged distribution
+
+**Product utility expansion**:
+The roadmap phase after playable, visually acceptable local playback: adding capabilities that make Mojify useful as a product before investing in package distribution or release polish.
+_Avoid_: Repository prettiness, packaged distribution, release automation
 
 **Smooth playback**:
 Playback that maintains stable frame timing in the terminal, even if late frames must be skipped.
@@ -94,11 +110,11 @@ _Avoid_: Fixed width, required width
 
 **Live resize**:
 Adapting the render grid while playback is already running.
-_Avoid_: Startup auto-fit
+_Avoid_: Startup auto-fit, video zoom
 
 **Zoom**:
-An interactive or configured crop/scale adjustment applied during playback. Zoom is not part of v1.
-_Avoid_: Auto-fit
+An interactive or configured source viewport adjustment applied during playback.
+_Avoid_: Auto-fit, live resize, terminal font-size changes
 
 **Renderer recipe**:
 The rules that turn pixels into characters, colors, and edge glyphs.

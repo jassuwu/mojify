@@ -2,6 +2,9 @@ package cli
 
 import (
 	"fmt"
+	"math"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -12,12 +15,22 @@ const (
 	HelpCommand CommandKind = iota
 	PlayCommand
 	ProbeCommand
+	ExportCommand
 )
 
+type ExportOptions struct {
+	Width     int
+	FPS       float64
+	Bitrate   string
+	Overwrite bool
+}
+
 type Command struct {
-	Kind      CommandKind
-	InputPath string
-	Stats     bool
+	Kind       CommandKind
+	InputPath  string
+	OutputPath string
+	Stats      bool
+	Export     ExportOptions
 }
 
 func Parse(args []string) (Command, error) {
@@ -32,6 +45,8 @@ func Parse(args []string) (Command, error) {
 		return parseInputCommand(PlayCommand, args)
 	case "probe":
 		return parseInputCommand(ProbeCommand, args)
+	case "export":
+		return parseExportCommand(args)
 	default:
 		return Command{}, fmt.Errorf("unknown command %q", args[0])
 	}
@@ -43,12 +58,19 @@ func HelpText() string {
 Terminal-first video playback with colored, edge-aware character frames.
 
 Usage:
-  mojify play [--stats] <video>  Play a local video file in the terminal
-  mojify probe <video>           Print media and render metadata
-  mojify --help                  Show this help
+  mojify play [--stats] <video>                         Play a local video file in the terminal
+  mojify probe <video>                                  Print media and render metadata
+  mojify export [options] <video> <output.mp4>          Export Mojify visuals to an MP4 file
+  mojify --help                                         Show this help
+
+Export options:
+  --width <px>        Output MP4 width in pixels
+  --fps <n>           Output frames per second
+  --bitrate <value>   Video bitrate, digits optionally followed by k, K, m, or M
+  --overwrite         Replace an existing output file
 
 Requirements:
-  FFmpeg and ffprobe must be available on PATH for v1.
+  FFmpeg and ffprobe must be available on PATH.
 `
 }
 
@@ -83,6 +105,101 @@ func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 		return Command{}, fmt.Errorf("%s accepts local video file paths only", args[0])
 	}
 	return Command{Kind: kind, InputPath: inputPath, Stats: stats}, nil
+}
+
+func parseExportCommand(args []string) (Command, error) {
+	paths := make([]string, 0, 2)
+	options := ExportOptions{}
+	seenOverwrite := false
+
+	for i := 1; i < len(args); i++ {
+		arg := args[i]
+		switch arg {
+		case "--width":
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("export requires a value for --width")
+			}
+			i++
+			width, err := strconv.Atoi(args[i])
+			if err != nil || width <= 0 {
+				return Command{}, fmt.Errorf("export requires --width to be greater than 0")
+			}
+			options.Width = width
+		case "--fps":
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("export requires a value for --fps")
+			}
+			i++
+			fps, err := strconv.ParseFloat(args[i], 64)
+			if err != nil || fps <= 0 || math.IsNaN(fps) || math.IsInf(fps, 0) {
+				return Command{}, fmt.Errorf("export requires --fps to be greater than 0")
+			}
+			options.FPS = fps
+		case "--bitrate":
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("export requires a value for --bitrate")
+			}
+			i++
+			if !isValidExportBitrate(args[i]) {
+				return Command{}, fmt.Errorf("export requires --bitrate to be digits optionally ending in k, K, m, or M")
+			}
+			options.Bitrate = args[i]
+		case "--overwrite":
+			if seenOverwrite {
+				return Command{}, fmt.Errorf("export accepts --overwrite only once")
+			}
+			seenOverwrite = true
+			options.Overwrite = true
+		default:
+			if strings.HasPrefix(arg, "--") {
+				return Command{}, fmt.Errorf("unknown export option %q", arg)
+			}
+			if len(paths) == 2 {
+				return Command{}, fmt.Errorf("export accepts exactly one input and one output")
+			}
+			paths = append(paths, arg)
+		}
+	}
+
+	if len(paths) != 2 {
+		return Command{}, fmt.Errorf("export requires an input video and output MP4 path")
+	}
+	if hasProtocolInput(paths[0]) {
+		return Command{}, fmt.Errorf("export accepts local video file paths only")
+	}
+	if hasProtocolInput(paths[1]) {
+		return Command{}, fmt.Errorf("export accepts local output file paths only")
+	}
+	if !strings.EqualFold(filepath.Ext(paths[1]), ".mp4") {
+		return Command{}, fmt.Errorf("export output must use a .mp4 extension")
+	}
+
+	return Command{
+		Kind:       ExportCommand,
+		InputPath:  paths[0],
+		OutputPath: paths[1],
+		Export:     options,
+	}, nil
+}
+
+func isValidExportBitrate(value string) bool {
+	if value == "" {
+		return false
+	}
+	digitEnd := len(value)
+	switch value[len(value)-1] {
+	case 'k', 'K', 'm', 'M':
+		digitEnd--
+	}
+	if digitEnd == 0 {
+		return false
+	}
+	for _, r := range value[:digitEnd] {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func hasProtocolInput(input string) bool {

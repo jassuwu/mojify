@@ -1,0 +1,60 @@
+# Export QA
+
+MP4 export QA uses generated clips for a repeatable smoke test and ignored real clips under `dist/` for optional source-audio verification.
+
+## Canonical Smoke
+
+```bash
+bun run qa:clips
+bun run build
+bun run qa:export
+```
+
+Expected generated output:
+
+- `dist/qa/export/low-motion-bars-export.mp4`
+- `ffprobe` reports a video stream for the synthetic export.
+- The exported synthetic video stream has width `320`.
+
+If a top-level `dist/` media file with an audio stream is present, `bun run qa:export` also writes:
+
+- `dist/qa/export/real-sample-export.mp4`
+- `ffprobe` reports an audio stream in that exported MP4.
+
+## Manual Synthetic Smoke
+
+```bash
+mkdir -p dist/qa/export
+./bin/mojify export --overwrite --width 320 dist/qa/low-motion-bars.mp4 dist/qa/export/low-motion-bars-export.mp4
+ffprobe -hide_banner -v error \
+  -select_streams v:0 \
+  -show_entries stream=codec_name,width,height,avg_frame_rate,duration \
+  -of default=noprint_wrappers=1 \
+  dist/qa/export/low-motion-bars-export.mp4
+```
+
+## Optional Real Sample Audio QA
+
+Use an ignored real local media file under `dist/` that has source audio:
+
+```bash
+REAL_SAMPLE="dist/<real-sample-with-audio>.webm"
+mkdir -p dist/qa/export
+./bin/mojify export --overwrite --width 320 "$REAL_SAMPLE" dist/qa/export/real-sample-export.mp4
+ffprobe -hide_banner -v error \
+  -select_streams a:0 \
+  -show_entries stream=codec_name,sample_rate,channels,duration \
+  -of default=noprint_wrappers=1 \
+  dist/qa/export/real-sample-export.mp4
+```
+
+The audio QA passes when the exported MP4 contains an audio stream. If the source file has no audio stream, choose a different ignored real sample or skip this optional check.
+
+## Checklist
+
+- Synthetic export completes without prompting because `--overwrite` is set.
+- Synthetic export writes `dist/qa/export/low-motion-bars-export.mp4`.
+- `ffprobe` finds video stream `v:0`.
+- The exported video width is `320`.
+- Optional real-sample export writes `dist/qa/export/real-sample-export.mp4`.
+- Optional real-sample export preserves source audio when the source has audio.

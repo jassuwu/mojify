@@ -4,7 +4,7 @@ Mojify is a terminal-first video player that transforms local video files into c
 
 ## Status
 
-V1 is source-build only. The first milestone is local visual playback in the terminal.
+Mojify is source-build only while the product capabilities are being built.
 
 ## Requirements
 
@@ -20,6 +20,7 @@ bun run build
 ./bin/mojify --help
 ./bin/mojify probe ./demo.mp4
 ./bin/mojify play ./demo.mp4
+./bin/mojify export --overwrite --width 320 ./demo.mp4 dist/demo-export.mp4
 ```
 
 ## Playback QA
@@ -32,20 +33,31 @@ bun run build
 
 The repeatable playback quality checklist lives in `docs/qa/playback-quality.md`.
 
+## Export QA
+
+```bash
+bun run qa:clips
+bun run build
+bun run qa:export
+```
+
+MP4 export writes colored character-frame video and includes source audio content when the input file has audio. The repeatable export checklist lives in `docs/qa/export.md`.
+
 ## Scope
 
-Included in v1:
+Included now:
 
 - Local video files
 - Visual terminal playback
+- MP4 export with source audio content when available
 - Truecolor ANSI output
 - Edge-aware character rendering
-- `play` and `probe` commands
+- `play`, `probe`, and `export` commands
 
 Deferred:
 
 - YouTube/URL input
-- Audio
-- Export to GIF/MP4/PNG
+- Live terminal audio playback
+- Export to GIF/PNG
 - npm/npx distribution
 - Plugins and custom recipes

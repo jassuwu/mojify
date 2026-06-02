@@ -11,12 +11,24 @@ import (
 )
 
 func DecodeArgs(path string, width int, height int) []string {
+	return decodeArgs(path, width, height, 0)
+}
+
+func ExportDecodeArgs(path string, width int, height int, fps float64) []string {
+	return decodeArgs(path, width, height, fps)
+}
+
+func decodeArgs(path string, width int, height int, fps float64) []string {
 	widthText := strconv.Itoa(width)
 	heightText := strconv.Itoa(height)
+	filter := "scale=" + widthText + ":" + heightText + ":force_original_aspect_ratio=decrease,pad=" + widthText + ":" + heightText + ":(ow-iw)/2:(oh-ih)/2"
+	if fps > 0 {
+		filter += ",fps=" + formatFPS(fps)
+	}
 	return []string{
 		"-v", "error",
 		"-i", path,
-		"-vf", "scale=" + widthText + ":" + heightText + ":force_original_aspect_ratio=decrease,pad=" + widthText + ":" + heightText + ":(ow-iw)/2:(oh-ih)/2",
+		"-vf", filter,
 		"-f", "rawvideo",
 		"-pix_fmt", "rgb24",
 		"-",
@@ -29,6 +41,18 @@ func StartDecoder(path string, width int, height int) (*exec.Cmd, io.ReadCloser,
 
 func StartDecoderContext(ctx context.Context, path string, width int, height int) (*exec.Cmd, io.ReadCloser, error) {
 	cmd := exec.CommandContext(ctx, "ffmpeg", DecodeArgs(path, width, height)...)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := cmd.Start(); err != nil {
+		return nil, nil, err
+	}
+	return cmd, stdout, nil
+}
+
+func StartExportDecoderContext(ctx context.Context, path string, width int, height int, fps float64) (*exec.Cmd, io.ReadCloser, error) {
+	cmd := exec.CommandContext(ctx, "ffmpeg", ExportDecodeArgs(path, width, height, fps)...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, nil, err
@@ -60,4 +84,8 @@ func frameByteSize(width int, height int) (int, error) {
 		return 0, fmt.Errorf("frame dimensions overflow %dx%d", width, height)
 	}
 	return width * height * 3, nil
+}
+
+func formatFPS(fps float64) string {
+	return strconv.FormatFloat(fps, 'f', -1, 64)
 }

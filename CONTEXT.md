@@ -60,6 +60,10 @@ _Avoid_: New renderer recipe, new product surface, audio, export
 A best-effort terminal presentation mode where each character frame update is bracketed so capable terminals apply the update as a single visual refresh.
 _Avoid_: Frame diffing, lower fidelity rendering, required terminal feature
 
+**Frame-diffed presentation**:
+A terminal presentation mode where Mojify updates only changed regions between consecutive character frames instead of repainting the whole frame every tick.
+_Avoid_: Renderer change, lower fidelity rendering, full-screen repaint
+
 **Sample clip QA set**:
 The repeatable clips used to evaluate playback quality hardening. The canonical set is generated synthetic clips for low-motion, high-motion, and high-contrast edge cases; ignored local real clips can supplement manual QA.
 _Avoid_: Checked-in copyrighted videos, one-off user-only demos

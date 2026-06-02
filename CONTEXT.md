@@ -72,6 +72,38 @@ _Avoid_: Audio, export, URL input, plugins, packaged distribution
 The roadmap phase after playable, visually acceptable local playback: adding capabilities that make Mojify useful as a product before investing in package distribution or release polish.
 _Avoid_: Repository prettiness, packaged distribution, release automation
 
+**Installable CLI distribution**:
+The roadmap phase that makes the proven Mojify CLI available through a normal user install path while preserving the existing `play`, `probe`, and `export` command surface.
+_Avoid_: Product utility expansion, plugin ecosystem, release polish
+
+**Binary release distribution**:
+An installable CLI distribution path where Mojify publishes prebuilt command-line binaries before broader package-manager or npm distribution.
+_Avoid_: Source-build only, desktop installer, full Linux distro packaging
+
+**Stable tag release**:
+A release flow triggered by an explicit SemVer-compatible calendar build tag that publishes Mojify binary artifacts for that version.
+_Avoid_: Nightly release, snapshot build, continuous deployment
+
+**Calendar build version**:
+The stable release version shape for Mojify binary releases: `v0.YYYYMMDD.BUILD`, such as `v0.20260602.145`.
+_Avoid_: Four-segment CalVer, Go module major-version bump, build-metadata-only uniqueness
+
+**Release snapshot QA**:
+A local, non-publishing release dry run that verifies Mojify binary archive layout, naming, and checksums before a stable tag release.
+_Avoid_: Nightly release channel, published prerelease, source-build QA
+
+**Version output**:
+The CLI surface that reports the installed Mojify binary version as `mojify VERSION` so users and release QA can confirm which build is running.
+_Avoid_: Diagnostics command, full build manifest, update checker
+
+**Runtime dependency hint**:
+A command-specific error message that tells users which external tool is missing and how to install it when Mojify cannot run a requested media operation.
+_Avoid_: Doctor command, dependency installer, background repair
+
+**WSL-only Windows support**:
+The first Windows distribution stance for Mojify, where Windows users run the Linux CLI inside WSL instead of a native Windows binary.
+_Avoid_: Native Windows binary, PowerShell-first install, Windows audio backend
+
 **Smooth playback**:
 Playback that maintains stable frame timing in the terminal, even if late frames must be skipped.
 _Avoid_: Showing every frame, frame-perfect playback

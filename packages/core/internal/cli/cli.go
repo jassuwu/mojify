@@ -23,6 +23,8 @@ type ExportOptions struct {
 	FPS       float64
 	Bitrate   string
 	Overwrite bool
+	Stats     bool
+	Workers   int
 }
 
 type Command struct {
@@ -68,6 +70,8 @@ Export options:
   --fps <n>           Output frames per second
   --bitrate <value>   Video bitrate, digits optionally followed by k, K, m, or M
   --overwrite         Replace an existing output file
+  --stats             Print export timing stats after completion
+  --workers <n>       Render and rasterize with n workers
 
 Requirements:
   FFmpeg and ffprobe must be available on PATH.
@@ -111,6 +115,7 @@ func parseExportCommand(args []string) (Command, error) {
 	paths := make([]string, 0, 2)
 	options := ExportOptions{}
 	seenOverwrite := false
+	seenStats := false
 
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
@@ -150,6 +155,22 @@ func parseExportCommand(args []string) (Command, error) {
 			}
 			seenOverwrite = true
 			options.Overwrite = true
+		case "--stats":
+			if seenStats {
+				return Command{}, fmt.Errorf("export accepts --stats only once")
+			}
+			seenStats = true
+			options.Stats = true
+		case "--workers":
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("export requires a value for --workers")
+			}
+			i++
+			workers, err := strconv.Atoi(args[i])
+			if err != nil || workers <= 0 {
+				return Command{}, fmt.Errorf("export requires --workers to be greater than 0")
+			}
+			options.Workers = workers
 		default:
 			if strings.HasPrefix(arg, "--") {
 				return Command{}, fmt.Errorf("unknown export option %q", arg)

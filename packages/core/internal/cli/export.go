@@ -16,6 +16,8 @@ func RunExport(ctx context.Context, inputPath string, outputPath string, stderr 
 		Bitrate:             options.Bitrate,
 		Overwrite:           options.Overwrite,
 		ProgressInteractive: isTerminalWriter(stderr),
+		Stats:               options.Stats,
+		Workers:             options.Workers,
 	})
 }
 

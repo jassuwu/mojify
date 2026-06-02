@@ -30,6 +30,7 @@ func TestMP4EncodeArgsMapsOptionalAudio(t *testing.T) {
 		"-map", "0:v:0",
 		"-map", "1:a?",
 		"-c:v", "libx264",
+		"-preset", "veryfast",
 		"-pix_fmt", "yuv420p",
 		"-c:a", "aac",
 		"-shortest",
@@ -38,6 +39,22 @@ func TestMP4EncodeArgsMapsOptionalAudio(t *testing.T) {
 	}
 	if !reflect.DeepEqual(args, want) {
 		t.Fatalf("args = %#v, want %#v", args, want)
+	}
+}
+
+func TestMP4EncodeArgsUsesVeryfastPreset(t *testing.T) {
+	args, err := MP4EncodeArgs(MP4EncodeOptions{
+		InputPath:  "source.mov",
+		OutputPath: "out.mp4",
+		Width:      640,
+		Height:     360,
+		FPS:        24,
+	})
+	if err != nil {
+		t.Fatalf("MP4EncodeArgs returned error: %v", err)
+	}
+	if !containsAdjacent(args, "-preset", "veryfast") {
+		t.Fatalf("args missing -preset veryfast: %#v", args)
 	}
 }
 
@@ -66,6 +83,7 @@ func TestMP4EncodeArgsUsesOverwriteFlag(t *testing.T) {
 		"-map", "0:v:0",
 		"-map", "1:a?",
 		"-c:v", "libx264",
+		"-preset", "veryfast",
 		"-pix_fmt", "yuv420p",
 		"-c:a", "aac",
 		"-shortest",
@@ -100,4 +118,13 @@ func TestMP4EncodeArgsRejectsInvalidDimensions(t *testing.T) {
 			}
 		})
 	}
+}
+
+func containsAdjacent(args []string, key, value string) bool {
+	for i := 0; i+1 < len(args); i++ {
+		if args[i] == key && args[i+1] == value {
+			return true
+		}
+	}
+	return false
 }

@@ -19,6 +19,9 @@ type Options struct {
 	Overwrite           bool
 	ProgressInteractive bool
 	ProgressClock       func() time.Time
+	Stats               bool
+	Workers             int
+	MetricsClock        func() time.Time
 }
 
 type InputInfo struct {

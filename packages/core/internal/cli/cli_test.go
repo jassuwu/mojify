@@ -124,6 +124,41 @@ func TestParseExportFlags(t *testing.T) {
 	}
 }
 
+func TestParseExportStatsAndWorkers(t *testing.T) {
+	cmd, err := Parse([]string{
+		"export",
+		"--stats",
+		"--workers", "6",
+		"clip.mov",
+		"clip.mp4",
+	})
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+	if !cmd.Export.Stats {
+		t.Fatal("Export.Stats = false, want true")
+	}
+	if cmd.Export.Workers != 6 {
+		t.Fatalf("Export.Workers = %d, want 6", cmd.Export.Workers)
+	}
+}
+
+func TestParseExportRejectsDuplicateStats(t *testing.T) {
+	_, err := Parse([]string{"export", "--stats", "clip.mov", "--stats", "clip.mp4"})
+	if err == nil {
+		t.Fatal("Parse returned nil error for duplicate export --stats")
+	}
+}
+
+func TestParseExportRejectsInvalidWorkers(t *testing.T) {
+	for _, workers := range []string{"0", "-1", "many"} {
+		_, err := Parse([]string{"export", "--workers", workers, "clip.mov", "clip.mp4"})
+		if err == nil {
+			t.Fatalf("Parse returned nil error for invalid --workers %q", workers)
+		}
+	}
+}
+
 func TestParseMissingInput(t *testing.T) {
 	_, err := Parse([]string{"play"})
 	if err == nil {
@@ -224,6 +259,8 @@ func TestHelpTextMentionsCommands(t *testing.T) {
 		"--fps <n>",
 		"--bitrate <value>",
 		"--overwrite",
+		"--stats",
+		"--workers <n>",
 		"FFmpeg and ffprobe",
 	} {
 		if !contains(help, want) {

@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/jass/mojify/packages/core/internal/exporter/fonts"
 	"github.com/jass/mojify/packages/core/internal/media"
 	"github.com/jass/mojify/packages/core/internal/render"
 )
@@ -73,33 +72,30 @@ func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr 
 		}
 	}()
 
-	face, err := fonts.DefaultFace()
-	if err != nil {
-		return fmt.Errorf("load export font: %w", err)
+	workers := resolveExportWorkers(options.Workers)
+	metricsClock := exportMetricsClock(options)
+	var metrics *exportMetrics
+	if options.Stats {
+		metrics = newExportMetrics(workers, metricsClock)
+		metrics.Start()
 	}
-	rasterizer := NewRasterizer(face)
-	renderer := render.DefaultRenderer{}
-	renderedFrames := 0
 
-	for {
-		rgbFrame, err := media.ReadRawFrame(decodePipe, layout.Grid.Cols, layout.Grid.Rows)
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			return fmt.Errorf("read decoded frame: %w", err)
-		}
-
-		charFrame := renderer.Render(rgbFrame, layout.Grid)
-		raw, err := rasterizer.Rasterize(charFrame, layout)
-		if err != nil {
-			return fmt.Errorf("rasterize frame: %w", err)
-		}
-		if _, err := encodePipe.Write(raw); err != nil {
-			return fmt.Errorf("write encoder frame: %w", err)
-		}
-		renderedFrames++
-		progress.Frame(renderedFrames)
+	renderedFrames, err := runExportFramePipeline(ctx, exportFramePipelineOptions{
+		Workers: workers,
+		ReadFrame: func() (render.RGBFrame, error) {
+			return media.ReadRawFrame(decodePipe, layout.Grid.Cols, layout.Grid.Rows)
+		},
+		NewProcessor: newExportFrameProcessorFactory(layout, metrics, metricsClock),
+		WriteFrame: func(raw []byte) error {
+			_, err := encodePipe.Write(raw)
+			return err
+		},
+		Progress: progress,
+		Metrics:  metrics,
+		Clock:    metricsClock,
+	})
+	if err != nil {
+		return err
 	}
 
 	if err := decodePipe.Close(); err != nil {
@@ -125,8 +121,26 @@ func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr 
 	if encodeErr != nil {
 		return fmt.Errorf("encoder failed: %w", encodeErr)
 	}
+	if metrics != nil {
+		metrics.Finish()
+	}
 	progress.Complete(outputPath)
+	printExportStats(stderr, options, metrics)
 	return nil
+}
+
+func exportMetricsClock(options Options) exportClock {
+	if options.MetricsClock != nil {
+		return exportClockFunc(options.MetricsClock)
+	}
+	return realExportClock{}
+}
+
+func printExportStats(w io.Writer, options Options, metrics *exportMetrics) {
+	if !options.Stats || metrics == nil || w == nil {
+		return
+	}
+	_, _ = fmt.Fprint(w, metrics.Summary())
 }
 
 func checkOutputPath(outputPath string, options Options) error {

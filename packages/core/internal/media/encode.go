@@ -18,6 +18,8 @@ type MP4EncodeOptions struct {
 	Overwrite  bool
 }
 
+const defaultMP4VideoPreset = "veryfast"
+
 func MP4EncodeArgs(options MP4EncodeOptions) ([]string, error) {
 	if strings.TrimSpace(options.InputPath) == "" {
 		return nil, fmt.Errorf("input path is required")
@@ -49,6 +51,7 @@ func MP4EncodeArgs(options MP4EncodeOptions) ([]string, error) {
 		"-map", "0:v:0",
 		"-map", "1:a?",
 		"-c:v", "libx264",
+		"-preset", defaultMP4VideoPreset,
 		"-pix_fmt", "yuv420p",
 		"-c:a", "aac",
 		"-shortest",

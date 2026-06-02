@@ -21,6 +21,25 @@ If a top-level `dist/` media file with an audio stream is present, `bun run qa:e
 - `dist/qa/export/real-sample-export.mp4`
 - `ffprobe` reports an audio stream in that exported MP4.
 
+## Throughput QA
+
+Use export stats to compare the current branch against the previous `main` baseline with the same source, output width, terminal, and machine load.
+
+```bash
+bun run qa:clips
+bun run build
+time ./bin/mojify export --overwrite --stats --width 320 dist/qa/low-motion-bars.mp4 dist/qa/export/low-motion-bars-export.mp4
+```
+
+Record ignored local notes under `dist/qa/export-throughput-after.md` when comparing a branch. Include:
+
+- source file
+- output width
+- worker count from `export stats`
+- elapsed wall-clock time from `time`
+- `export stats` summary
+- whether exported video/audio QA still passes
+
 ## Manual Synthetic Smoke
 
 ```bash
@@ -70,3 +89,7 @@ The audio QA passes when the exported MP4 contains an audio stream. If the sourc
 - Known-total export progress reaches `100%` before `finalizing mp4...`.
 - Export progress does not print an ETA or time remaining.
 - Non-TTY export logs remain sparse and readable.
+- Export stats print when `--stats` is passed.
+- Export stats do not print by default.
+- Parallel export preserves ordered video frames and source audio behavior.
+- Throughput comparisons use the same source file, width, machine, and terminal conditions.

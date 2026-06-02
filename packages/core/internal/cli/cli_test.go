@@ -87,6 +87,21 @@ func TestParsePlayRejectsDuplicateNoAudio(t *testing.T) {
 	}
 }
 
+func TestParseVersionCommands(t *testing.T) {
+	for _, args := range [][]string{
+		{"--version"},
+		{"version"},
+	} {
+		cmd, err := Parse(args)
+		if err != nil {
+			t.Fatalf("Parse(%v) returned error: %v", args, err)
+		}
+		if cmd.Kind != VersionCommand {
+			t.Fatalf("Kind = %v, want %v for args %v", cmd.Kind, VersionCommand, args)
+		}
+	}
+}
+
 func TestParseRejectsNoAudioForProbe(t *testing.T) {
 	_, err := Parse([]string{"probe", "--no-audio", "clip.mp4"})
 	if err == nil {
@@ -98,6 +113,36 @@ func TestParseRejectsStatsForProbe(t *testing.T) {
 	_, err := Parse([]string{"probe", "--stats", "clip.mp4"})
 	if err == nil {
 		t.Fatal("Parse returned nil error for probe --stats")
+	}
+}
+
+func TestVersionTextUsesInjectedVersion(t *testing.T) {
+	oldVersion := version
+	t.Cleanup(func() {
+		version = oldVersion
+	})
+
+	version = "v0.20260602.145"
+
+	got := VersionText()
+	want := "mojify 0.20260602.145\n"
+	if got != want {
+		t.Fatalf("VersionText() = %q, want %q", got, want)
+	}
+}
+
+func TestVersionTextFallsBackForSourceBuild(t *testing.T) {
+	oldVersion := version
+	t.Cleanup(func() {
+		version = oldVersion
+	})
+
+	version = ""
+
+	got := VersionText()
+	want := "mojify 0.0.0-dev\n"
+	if got != want {
+		t.Fatalf("VersionText() = %q, want %q", got, want)
 	}
 }
 
@@ -336,6 +381,7 @@ func TestHelpTextMentionsCommands(t *testing.T) {
 	for _, want := range []string{
 		"mojify play [--stats] [--no-audio] <source>",
 		"Play source media in the terminal",
+		"mojify --version",
 		"mojify probe <source>",
 		"Print source media and render metadata",
 		"mojify export [options] <source> <output.mp4>",

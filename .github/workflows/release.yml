@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v0.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish CLI release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Validate release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v0\.[0-9]{8}\.[0-9]+$ ]]; then
+            echo "Invalid Mojify release tag: $GITHUB_REF_NAME" >&2
+            echo "Expected v0.YYYYMMDD.BUILD, for example v0.20260602.145" >&2
+            exit 1
+          fi
+
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Test
+        run: go test ./...
+
+      - name: Version smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          go build \
+            -ldflags "-X github.com/jass/mojify/packages/core/internal/cli.version=${version}" \
+            -o /tmp/mojify \
+            ./packages/core/cmd/mojify
+          /tmp/mojify --version
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}

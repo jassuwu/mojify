@@ -35,3 +35,10 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      - name: GoReleaser snapshot
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --snapshot --clean

@@ -116,16 +116,16 @@ func TestParseRejectsStatsForProbe(t *testing.T) {
 	}
 }
 
-func TestVersionTextUsesInjectedVersion(t *testing.T) {
+func TestVersionTextUsesInjectedCalendarBuildVersion(t *testing.T) {
 	oldVersion := version
 	t.Cleanup(func() {
 		version = oldVersion
 	})
 
-	version = "v0.20260602.145"
+	version = "v2026.06.02.145"
 
 	got := VersionText()
-	want := "mojify 0.20260602.145\n"
+	want := "mojify 2026.06.02.145\n"
 	if got != want {
 		t.Fatalf("VersionText() = %q, want %q", got, want)
 	}

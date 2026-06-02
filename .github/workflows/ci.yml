@@ -36,9 +36,33 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: GoReleaser snapshot
-        uses: goreleaser/goreleaser-action@v7
-        with:
-          distribution: goreleaser
-          version: "~> v2"
-          args: release --snapshot --clean
+      - name: Package smoke
+        run: scripts/package-release.sh 0.0.0-SNAPSHOT dist/release-smoke
+
+      - name: Version smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp_dir="$(mktemp -d)"
+          tar -xzf dist/release-smoke/mojify_0.0.0-SNAPSHOT_linux_amd64.tar.gz -C "$tmp_dir"
+          actual="$("$tmp_dir/mojify" --version)"
+          rm -rf "$tmp_dir"
+          if [[ "$actual" != "mojify 0.0.0-SNAPSHOT" ]]; then
+            echo "Unexpected version output: $actual" >&2
+            exit 1
+          fi
+
+      - name: Artifact smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/release-smoke/mojify_0.0.0-SNAPSHOT_darwin_amd64.tar.gz
+          test -f dist/release-smoke/mojify_0.0.0-SNAPSHOT_darwin_arm64.tar.gz
+          test -f dist/release-smoke/mojify_0.0.0-SNAPSHOT_linux_amd64.tar.gz
+          test -f dist/release-smoke/mojify_0.0.0-SNAPSHOT_linux_arm64.tar.gz
+          test -f dist/release-smoke/checksums.txt
+          line_count="$(wc -l < dist/release-smoke/checksums.txt | tr -d ' ')"
+          if [[ "$line_count" != "4" ]]; then
+            echo "Expected 4 checksum lines, got $line_count" >&2
+            exit 1
+          fi

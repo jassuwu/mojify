@@ -73,20 +73,24 @@ The roadmap phase after playable, visually acceptable local playback: adding cap
 _Avoid_: Repository prettiness, packaged distribution, release automation
 
 **Installable CLI distribution**:
-The roadmap phase that makes the proven Mojify CLI available through a normal user install path while preserving the existing `play`, `probe`, and `export` command surface.
+The roadmap phase that makes the proven Mojify CLI available through normal user install paths while preserving the existing `play`, `probe`, and `export` command surface.
 _Avoid_: Product utility expansion, plugin ecosystem, release polish
 
 **Binary release distribution**:
-An installable CLI distribution path where Mojify publishes prebuilt command-line binaries before broader package-manager or npm distribution.
-_Avoid_: Source-build only, desktop installer, full Linux distro packaging
+An installable CLI distribution path where Mojify publishes prebuilt command-line binaries as GitHub Release tarballs.
+_Avoid_: Source-building Homebrew formula, desktop installer, full Linux distro packaging
+
+**Source-building Homebrew formula**:
+The Homebrew install path where the Mojify tap formula downloads a tagged source archive, builds the CLI from source, and installs the resulting `mojify` binary.
+_Avoid_: GoReleaser binary formula, cask, prebuilt Homebrew artifact
 
 **Stable tag release**:
-A release flow triggered by an explicit SemVer-compatible calendar build tag that publishes Mojify binary artifacts for that version.
+A release flow triggered by an explicit calendar + build tag, such as `v2026.06.02.145`, that publishes Mojify install artifacts for that version.
 _Avoid_: Nightly release, snapshot build, continuous deployment
 
-**Calendar build version**:
-The stable release version shape for Mojify binary releases: `v0.YYYYMMDD.BUILD`, such as `v0.20260602.145`.
-_Avoid_: Four-segment CalVer, Go module major-version bump, build-metadata-only uniqueness
+**Calendar + build version**:
+The stable release version shape for Mojify releases: Git tags use `vYYYY.MM.DD.BUILD`, such as `v2026.06.02.145`, while user-facing version output omits the `v`, such as `mojify 2026.06.02.145`.
+_Avoid_: SemVer-shaped calendar tags, Go module major-version bump, build-metadata-only uniqueness
 
 **Release snapshot QA**:
 A local, non-publishing release dry run that verifies Mojify binary archive layout, naming, and checksums before a stable tag release.

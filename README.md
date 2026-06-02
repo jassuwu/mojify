@@ -4,7 +4,7 @@ Mojify is a terminal-first video player that transforms local video files and yt
 
 ## Installation
 
-Mojify is distributed as a prebuilt CLI for macOS and Linux.
+Mojify is distributed through Homebrew and GitHub Releases for macOS and Linux.
 
 ### Homebrew
 
@@ -12,12 +12,13 @@ Mojify is distributed as a prebuilt CLI for macOS and Linux.
 brew install jassuwu/tap/mojify
 ```
 
+The Homebrew formula builds Mojify from the tagged source archive and installs runtime dependencies declared by the formula.
+
 ### GitHub Releases
 
 Download the matching tarball for your platform from the [GitHub Releases](https://github.com/jassuwu/mojify/releases), then place `mojify` on your `PATH`.
 
 Windows support is WSL-only for now. Native Windows binaries are deferred.
-Use either method for normal installs instead of source builds.
 
 ## Requirements
 

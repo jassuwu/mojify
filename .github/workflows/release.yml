@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v0.*.*"
+      - "v*.*.*.*"
 
 permissions:
   contents: write
@@ -12,7 +12,7 @@ jobs:
   release:
     name: Publish CLI release
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,9 +28,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ ! "$GITHUB_REF_NAME" =~ ^v0\.[0-9]{8}\.[0-9]+$ ]]; then
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]+$ ]]; then
             echo "Invalid Mojify release tag: $GITHUB_REF_NAME" >&2
-            echo "Expected v0.YYYYMMDD.BUILD, for example v0.20260602.145" >&2
+            echo "Expected vYYYY.MM.DD.BUILD, for example v2026.06.02.145" >&2
             exit 1
           fi
 
@@ -40,37 +40,99 @@ jobs:
       - name: Test
         run: go test ./...
 
-      - name: Build GoReleaser smoke artifact
-        uses: goreleaser/goreleaser-action@v7
-        with:
-          distribution: goreleaser
-          version: "~> v2"
-          args: build --clean --single-target
+      - name: Package release artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          scripts/package-release.sh "$version" dist/release
 
       - name: Version smoke
         shell: bash
         run: |
           set -euo pipefail
-          expected="mojify ${GITHUB_REF_NAME#v}"
-          binary="$(find dist -type f -name mojify -perm -111 | head -n 1)"
-          if [[ -z "$binary" ]]; then
-            echo "GoReleaser smoke build did not produce a mojify binary." >&2
-            exit 1
-          fi
-          actual="$("$binary" --version)"
+          version="${GITHUB_REF_NAME#v}"
+          tmp_dir="$(mktemp -d)"
+          tar -xzf "dist/release/mojify_${version}_linux_amd64.tar.gz" -C "$tmp_dir"
+          actual="$("$tmp_dir/mojify" --version)"
+          rm -rf "$tmp_dir"
+          expected="mojify ${version}"
           if [[ "$actual" != "$expected" ]]; then
-            echo "Unexpected version output from $binary" >&2
+            echo "Unexpected version output" >&2
             echo "Expected: $expected" >&2
             echo "Actual:   $actual" >&2
             exit 1
           fi
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v7
-        with:
-          distribution: goreleaser
-          version: "~> v2"
-          args: release --clean
+      - name: Publish GitHub Release
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/release/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber
+            gh release edit "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Mojify ${version}"
+          else
+            gh release create "$GITHUB_REF_NAME" dist/release/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Mojify ${version}" \
+              --generate-notes
+          fi
+
+      - name: Compute source archive checksum
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive_url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
+          archive_path="$(mktemp)"
+          curl -fsSL "$archive_url" -o "$archive_path"
+          sha256="$(shasum -a 256 "$archive_path" | awk '{print $1}')"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Homebrew tap
+        uses: actions/checkout@v4
+        with:
+          repository: jassuwu/homebrew-tap
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
+          path: homebrew-tap
+
+      - name: Render Homebrew formula
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p homebrew-tap/Formula
+          scripts/render-homebrew-formula.sh "$GITHUB_REF_NAME" "${{ steps.source.outputs.sha256 }}" > homebrew-tap/Formula/mojify.rb
+          ruby -c homebrew-tap/Formula/mojify.rb
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Validate Homebrew formula
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew audit --formula homebrew-tap/Formula/mojify.rb
+          brew install --build-from-source ./homebrew-tap/Formula/mojify.rb
+          brew test ./homebrew-tap/Formula/mojify.rb
+
+      - name: Push Homebrew tap update
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/mojify.rb
+          if git diff --cached --quiet; then
+            echo "Homebrew formula already up to date."
+            exit 0
+          fi
+          git commit -m "mojify ${GITHUB_REF_NAME#v}"
+          git push

@@ -1,5 +1,7 @@
 # Mojify Binary Release Distribution Implementation Plan
 
+> **Superseded:** This GoReleaser-based plan was superseded by `docs/superpowers/plans/2026-06-02-mojify-native-installable-cli-distribution.md`. Do not use this plan for implementation.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make Mojify installable as a prebuilt CLI through GitHub Release tarballs and `brew install jassuwu/tap/mojify`.

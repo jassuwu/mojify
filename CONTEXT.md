@@ -32,6 +32,10 @@ _Avoid_: Exported media audio, audio muxing
 A product utility output that renders Mojify visuals into an MP4 file and preserves source audio content when available.
 _Avoid_: Terminal playback, silent export by default
 
+**Export progress**:
+User-facing export status on stderr that reports rendered frame progress against the export frame count when the total is knowable, and an indeterminate rendered-frame count when it is not. `100%` means Mojify has rendered and written all visual frames to the MP4 encoder, after which the status should move to MP4 finalization; export progress should be terminal-friendly when interactive, log-friendly otherwise, and should not claim an ETA or time remaining by default.
+_Avoid_: Export ETA, FFmpeg progress, fake completion estimate
+
 **Export font**:
 The bundled monospace font used to rasterize Mojify character frames into exported media. The preferred default is `Mx437_IBM_BIOS`.
 _Avoid_: User terminal font, arbitrary system font

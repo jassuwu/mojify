@@ -3,6 +3,7 @@ package exporter
 import (
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/jass/mojify/packages/core/internal/render"
 )
@@ -12,10 +13,12 @@ const ExportCellHeight = 8
 const DefaultExportMaxWidth = 1280
 
 type Options struct {
-	Width     int
-	FPS       float64
-	Bitrate   string
-	Overwrite bool
+	Width               int
+	FPS                 float64
+	Bitrate             string
+	Overwrite           bool
+	ProgressInteractive bool
+	ProgressClock       func() time.Time
 }
 
 type InputInfo struct {

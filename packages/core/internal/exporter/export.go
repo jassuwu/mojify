@@ -13,7 +13,7 @@ import (
 	"github.com/jass/mojify/packages/core/internal/render"
 )
 
-func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options Options) error {
+func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options Options) (err error) {
 	if err := checkOutputPath(outputPath, options); err != nil {
 		return err
 	}
@@ -26,10 +26,21 @@ func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr 
 	if err != nil {
 		return err
 	}
-	if stderr != nil {
-		fmt.Fprintf(stderr, "export: %s -> %s\n", inputPath, outputPath)
-		fmt.Fprintf(stderr, "output: %dx%d @ %.3f fps\n", layout.OutputWidth, layout.OutputHeight, layout.FPS)
-	}
+	progress := newProgressReporter(stderr, progressReporterOptions{
+		Interactive: options.ProgressInteractive,
+		TotalFrames: estimateExportFrameTotal(InputProgressInfo{
+			SourceFPS:       info.FPS,
+			FrameCount:      info.FrameCount,
+			DurationSeconds: info.DurationSeconds,
+		}, layout, options),
+		Now: options.ProgressClock,
+	})
+	progress.Start(inputPath, outputPath, layout)
+	defer func() {
+		if err != nil {
+			progress.ErrorLine()
+		}
+	}()
 
 	decodeCmd, decodePipe, err := media.StartExportDecoderContext(ctx, inputPath, layout.Grid.Cols, layout.Grid.Rows, options.FPS)
 	if err != nil {
@@ -50,7 +61,7 @@ func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr 
 		FPS:        layout.FPS,
 		Bitrate:    options.Bitrate,
 		Overwrite:  options.Overwrite,
-	}, stderr)
+	}, progress.lineSafeWriter(stderr))
 	if err != nil {
 		return fmt.Errorf("start encoder: %w", err)
 	}
@@ -68,6 +79,7 @@ func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr 
 	}
 	rasterizer := NewRasterizer(face)
 	renderer := render.DefaultRenderer{}
+	renderedFrames := 0
 
 	for {
 		rgbFrame, err := media.ReadRawFrame(decodePipe, layout.Grid.Cols, layout.Grid.Rows)
@@ -86,6 +98,8 @@ func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr 
 		if _, err := encodePipe.Write(raw); err != nil {
 			return fmt.Errorf("write encoder frame: %w", err)
 		}
+		renderedFrames++
+		progress.Frame(renderedFrames)
 	}
 
 	if err := decodePipe.Close(); err != nil {
@@ -94,21 +108,24 @@ func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr 
 	decodeErr := decodeCmd.Wait()
 	decodeCleaned = true
 
+	if decodeErr != nil {
+		return fmt.Errorf("decoder failed: %w", decodeErr)
+	}
+
 	if err := encodePipe.Close(); err != nil {
 		return fmt.Errorf("close encoder pipe: %w", err)
 	}
 	encodeClosed = true
+
+	progress.AllFramesWritten(renderedFrames)
+	progress.Finalizing()
+
 	encodeErr := encodeCmd.Wait()
 
-	if decodeErr != nil {
-		return fmt.Errorf("decoder failed: %w", decodeErr)
-	}
 	if encodeErr != nil {
 		return fmt.Errorf("encoder failed: %w", encodeErr)
 	}
-	if stderr != nil {
-		fmt.Fprintf(stderr, "export complete: %s\n", outputPath)
-	}
+	progress.Complete(outputPath)
 	return nil
 }
 

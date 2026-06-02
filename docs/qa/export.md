@@ -33,6 +33,15 @@ ffprobe -hide_banner -v error \
   dist/qa/export/low-motion-bars-export.mp4
 ```
 
+Expected progress output:
+
+- Interactive stderr updates one progress line while rendering frames.
+- Known-total exports show rendered export-frame progress such as `exporting video: 120/240 frames 50%`.
+- Progress reaches `100%` only after visual frames have been rendered and written to the encoder.
+- After `100%`, status switches to `finalizing mp4...`.
+- Export ends with `export complete: <output>`.
+- No ETA or time-remaining text is printed.
+
 ## Optional Real Sample Audio QA
 
 Use an ignored real local media file under `dist/` that has source audio:
@@ -58,3 +67,6 @@ The audio QA passes when the exported MP4 contains an audio stream. If the sourc
 - The exported video width is `320`.
 - Optional real-sample export writes `dist/qa/export/real-sample-export.mp4`.
 - Optional real-sample export preserves source audio when the source has audio.
+- Known-total export progress reaches `100%` before `finalizing mp4...`.
+- Export progress does not print an ETA or time remaining.
+- Non-TTY export logs remain sparse and readable.

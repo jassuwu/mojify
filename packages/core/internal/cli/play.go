@@ -110,7 +110,7 @@ func RunPlay(ctx context.Context, inputPath string, stdin *os.File, stdout io.Wr
 		}
 	}()
 
-	playErr := player.PlayWithControls(ctx, frames, presenter, info.FPS, controls, metrics)
+	playErr := player.PlayWithControls(ctx, frames, &presenter, info.FPS, controls, metrics)
 	ctxErr := ctx.Err()
 	if ctxErr != nil || playErr != nil {
 		cancel()

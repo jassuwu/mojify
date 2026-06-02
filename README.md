@@ -2,19 +2,38 @@
 
 Mojify is a terminal-first video player that transforms local video files and yt-dlp-compatible platform URLs into colored, edge-aware character frames.
 
-## Status
+## Installation
 
-Mojify is source-build only while the product capabilities are being built.
+Mojify is distributed through Homebrew and GitHub Releases for macOS and Linux.
+
+### Homebrew
+
+```bash
+brew install jassuwu/tap/mojify
+```
+
+The Homebrew formula builds Mojify from the tagged source archive and installs runtime dependencies declared by the formula.
+
+### GitHub Releases
+
+Download the matching tarball for your platform from the [GitHub Releases](https://github.com/jassuwu/mojify/releases), then place `mojify` on your `PATH`.
+
+Windows support is WSL-only for now. Native Windows binaries are deferred.
 
 ## Requirements
 
-- Go 1.23+
-- Bun 1.3+
 - FFmpeg and ffprobe on `PATH`
 - yt-dlp on `PATH` for platform URL inputs
 - ffplay on `PATH` for live playback audio
 
-## Run
+Homebrew installs declare `ffmpeg` and `yt-dlp`. Tarball installs require these tools to be installed separately.
+
+## Development Requirements
+
+- Go 1.23+
+- Bun 1.3+
+
+## Run From Source
 
 ```bash
 bun install

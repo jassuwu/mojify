@@ -46,7 +46,7 @@ func StartDecoderContext(ctx context.Context, path string, width int, height int
 		return nil, nil, err
 	}
 	if err := cmd.Start(); err != nil {
-		return nil, nil, err
+		return nil, nil, formatToolStartError("ffmpeg", err)
 	}
 	return cmd, stdout, nil
 }
@@ -58,7 +58,7 @@ func StartExportDecoderContext(ctx context.Context, path string, width int, heig
 		return nil, nil, err
 	}
 	if err := cmd.Start(); err != nil {
-		return nil, nil, err
+		return nil, nil, formatToolStartError("ffmpeg", err)
 	}
 	return cmd, stdout, nil
 }

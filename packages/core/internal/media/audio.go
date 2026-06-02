@@ -36,7 +36,7 @@ func StartFFplayAudioContext(ctx context.Context, inputPath string, stderr io.Wr
 		return nil, nil, err
 	}
 	if err := cmd.Start(); err != nil {
-		return nil, nil, err
+		return nil, nil, formatToolStartError("ffplay", err)
 	}
 	return cmd, stdin, nil
 }

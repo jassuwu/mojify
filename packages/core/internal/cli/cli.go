@@ -13,6 +13,7 @@ type CommandKind int
 
 const (
 	HelpCommand CommandKind = iota
+	VersionCommand
 	PlayCommand
 	ProbeCommand
 	ExportCommand
@@ -44,6 +45,8 @@ func Parse(args []string) (Command, error) {
 	switch args[0] {
 	case "-h", "--help", "help":
 		return Command{Kind: HelpCommand}, nil
+	case "--version", "version":
+		return Command{Kind: VersionCommand}, nil
 	case "play":
 		return parseInputCommand(PlayCommand, args)
 	case "probe":
@@ -64,6 +67,7 @@ Usage:
   mojify play [--stats] [--no-audio] <source>           Play source media in the terminal
   mojify probe <source>                                 Print source media and render metadata
   mojify export [options] <source> <output.mp4>         Export Mojify visuals to an MP4 file
+  mojify --version                                      Print the installed Mojify version
   mojify --help                                         Show this help
 
 Source:

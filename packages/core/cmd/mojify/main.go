@@ -22,6 +22,8 @@ func main() {
 	switch cmd.Kind {
 	case cli.HelpCommand:
 		fmt.Print(cli.HelpText())
+	case cli.VersionCommand:
+		fmt.Print(cli.VersionText())
 	case cli.PlayCommand:
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()

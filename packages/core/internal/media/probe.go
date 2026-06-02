@@ -31,10 +31,7 @@ func ProbeContext(ctx context.Context, path string) (Info, error) {
 
 	output, err := cmd.Output()
 	if err != nil {
-		if msg := strings.TrimSpace(stderr.String()); msg != "" {
-			return Info{}, fmt.Errorf("ffprobe failed: %s", msg)
-		}
-		return Info{}, fmt.Errorf("ffprobe failed: %w", err)
+		return Info{}, formatToolFailure("ffprobe", err, stderr.String())
 	}
 
 	return ParseProbeJSON(output)

@@ -3,16 +3,13 @@ set -euo pipefail
 
 export_dir="dist/qa/export"
 synthetic_source="dist/qa/low-motion-bars.mp4"
-
-declare -A synthetic_outputs=(
-  [mp4]="${export_dir}/low-motion-bars-export.mp4"
-  [gif]="${export_dir}/low-motion-bars-export.gif"
-  [apng]="${export_dir}/low-motion-bars-export.apng"
-  [png]="${export_dir}/low-motion-bars-frame.png"
-  [jpg]="${export_dir}/low-motion-bars-frame.jpg"
-  [txt]="${export_dir}/low-motion-bars-frame.txt"
-  [ansi]="${export_dir}/low-motion-bars-frame.ansi"
-)
+synthetic_mp4="${export_dir}/low-motion-bars-export.mp4"
+synthetic_gif="${export_dir}/low-motion-bars-export.gif"
+synthetic_apng="${export_dir}/low-motion-bars-export.apng"
+synthetic_png="${export_dir}/low-motion-bars-frame.png"
+synthetic_jpg="${export_dir}/low-motion-bars-frame.jpg"
+synthetic_txt="${export_dir}/low-motion-bars-frame.txt"
+synthetic_ansi="${export_dir}/low-motion-bars-frame.ansi"
 
 require_nonempty_file() {
   local path="$1"
@@ -93,21 +90,21 @@ fi
 mkdir -p "${export_dir}"
 
 printf 'Exporting synthetic QA clip across representative formats...\n'
-./bin/mojify export --overwrite --width 320 "${synthetic_source}" "${synthetic_outputs[mp4]}"
-./bin/mojify export --overwrite --width 320 --at 0s --duration 2s "${synthetic_source}" "${synthetic_outputs[gif]}"
-./bin/mojify export --overwrite --width 320 --at 0s --duration 2s "${synthetic_source}" "${synthetic_outputs[apng]}"
-./bin/mojify export --overwrite --width 320 --at 0s "${synthetic_source}" "${synthetic_outputs[png]}"
-./bin/mojify export --overwrite --width 320 --at 0s "${synthetic_source}" "${synthetic_outputs[jpg]}"
-./bin/mojify export --overwrite --width 80 --at 0s "${synthetic_source}" "${synthetic_outputs[txt]}"
-./bin/mojify export --overwrite --width 80 --at 0s "${synthetic_source}" "${synthetic_outputs[ansi]}"
+./bin/mojify export --overwrite --width 320 "${synthetic_source}" "${synthetic_mp4}"
+./bin/mojify export --overwrite --width 320 --at 0s --duration 2s "${synthetic_source}" "${synthetic_gif}"
+./bin/mojify export --overwrite --width 320 --at 0s --duration 2s "${synthetic_source}" "${synthetic_apng}"
+./bin/mojify export --overwrite --width 320 --at 0s "${synthetic_source}" "${synthetic_png}"
+./bin/mojify export --overwrite --width 320 --at 0s "${synthetic_source}" "${synthetic_jpg}"
+./bin/mojify export --overwrite --width 80 --at 0s "${synthetic_source}" "${synthetic_txt}"
+./bin/mojify export --overwrite --width 80 --at 0s "${synthetic_source}" "${synthetic_ansi}"
 
-check_video_width "${synthetic_outputs[mp4]}" "320"
-check_video_width "${synthetic_outputs[gif]}" "320"
-check_video_width "${synthetic_outputs[apng]}" "320"
-check_video_width "${synthetic_outputs[png]}" "320"
-check_video_width "${synthetic_outputs[jpg]}" "320"
-require_nonempty_file "${synthetic_outputs[txt]}"
-require_nonempty_file "${synthetic_outputs[ansi]}"
+check_video_width "${synthetic_mp4}" "320"
+check_video_width "${synthetic_gif}" "320"
+check_video_width "${synthetic_apng}" "320"
+check_video_width "${synthetic_png}" "320"
+check_video_width "${synthetic_jpg}" "320"
+require_nonempty_file "${synthetic_txt}"
+require_nonempty_file "${synthetic_ansi}"
 
 real_source=""
 while IFS= read -r -d '' candidate; do

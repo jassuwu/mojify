@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Play videos live or export them as MP4s with color, edges, and source audio when available.
+  Play videos live or export colored, edge-aware Mojify output as video, animated, still-image, or text files.
 </p>
 
 <p align="center">
@@ -14,10 +14,6 @@
   <a href="https://github.com/jassuwu/homebrew-tap"><img alt="Homebrew tap" src="https://img.shields.io/badge/homebrew-jassuwu%2Ftap%2Fmojify-FBB040?style=flat-square&logo=homebrew&logoColor=111"></a>
   <img alt="Platforms: macOS and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-555?style=flat-square">
 </p>
-
-<!--
-Header demo asset goes here once Mojify can generate GIF/PNG output.
--->
 
 ## Installation
 
@@ -45,10 +41,13 @@ Play a yt-dlp-compatible URL:
 mojify play "https://www.youtube.com/watch?v=<id>"
 ```
 
-Export Mojify output as MP4:
+Export Mojify output as video, animation, still image, or text:
 
 ```bash
 mojify export --overwrite --width 320 ./demo.mp4 ./dist/demo-mojify.mp4
+mojify export --overwrite --width 320 --at 10s --duration 3s ./demo.mp4 ./dist/demo-mojify.gif
+mojify export --overwrite --width 320 --at 10s ./demo.mp4 ./dist/demo-frame.png
+mojify export --overwrite --width 80 --at 10s ./demo.mp4 ./dist/demo-frame.ansi
 ```
 
 Inspect what Mojify will derive from a source:
@@ -59,14 +58,15 @@ mojify probe ./demo.mp4
 
 ## What It Does
 
-Mojify accepts local video files and yt-dlp-compatible platform URLs as source media. It turns those sources into colored character frames that can be played live or exported as MP4.
+Mojify accepts local video files and yt-dlp-compatible platform URLs as source media. It turns those sources into colored character frames that can be played live or exported through a curated set of media, image, and text formats.
 
 Current capabilities:
 
 - Local video playback
 - yt-dlp-compatible URL input
 - Live terminal audio playback
-- MP4 export with source audio when available
+- Curated export formats: MP4, WebM, MOV, GIF, APNG, PNG, JPEG, plain text, and ANSI text
+- Source audio preservation for supported video exports when audio is available
 - Truecolor ANSI output
 - Edge-aware character rendering
 - `play`, `probe`, and `export` commands
@@ -84,13 +84,13 @@ The default renderer is built around a practical media-to-text recipe:
 - edge detection can override density characters with directional glyphs
 - frame timing favors smooth playback over showing every decoded frame
 
-Future renderer recipes may swap the character set, color strategy, or conversion rules entirely. Emoji output, custom character recipes, and still-frame/image outputs are intentionally left as future product surface, not current README promises.
+Future renderer recipes may swap the character set, color strategy, or conversion rules entirely. Emoji output and custom character recipes are intentionally left as future product surface, not current README promises.
 
 ## Requirements
 
 Mojify shells out to battle-tested media tools instead of reimplementing their jobs:
 
-- `ffmpeg` and `ffprobe` for media decoding, probing, and MP4 export
+- `ffmpeg` and `ffprobe` for media decoding, probing, and media/image export
 - `ffplay` for live playback audio
 - `yt-dlp` for platform URL inputs
 
@@ -100,8 +100,8 @@ Homebrew installs declare `ffmpeg` and `yt-dlp`. Tarball installs require the ru
 
 Planned or likely follow-up work:
 
-- GIF, PNG, and still-image outputs
 - a Mojify-generated README header demo GIF
+- WebP export
 - custom renderer recipes
 - npm/npx wrapper around the native binary
 - native Windows support beyond WSL

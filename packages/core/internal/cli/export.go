@@ -11,7 +11,7 @@ import (
 
 type exportRunnerOptions struct {
 	YTDLPPath string
-	ExportMP4 func(context.Context, string, string, io.Writer, exporter.Options) error
+	Export    func(context.Context, string, string, io.Writer, exporter.Options) error
 }
 
 func RunExport(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options ExportOptions) error {
@@ -28,9 +28,10 @@ func runExportWithOptions(ctx context.Context, inputPath string, outputPath stri
 		Stats:               options.Stats,
 		Workers:             options.Workers,
 		InputLabel:          inputPath,
-	}
-	if err := exporter.CheckOutputPath(outputPath, exportOptions); err != nil {
-		return err
+		HasAt:               options.HasAt,
+		AtSeconds:           options.AtSeconds,
+		HasDuration:         options.HasDuration,
+		DurationSeconds:     options.DurationSeconds,
 	}
 
 	resolved, err := resolveSourceMediaWithOptions(ctx, inputPath, sourceResolverOptions{
@@ -42,11 +43,11 @@ func runExportWithOptions(ctx context.Context, inputPath string, outputPath stri
 	}
 	defer resolved.Cleanup()
 
-	exportMP4 := runnerOptions.ExportMP4
-	if exportMP4 == nil {
-		exportMP4 = exporter.ExportMP4
+	exportFn := runnerOptions.Export
+	if exportFn == nil {
+		exportFn = exporter.Export
 	}
-	return exportMP4(ctx, resolved.Path, outputPath, stderr, exportOptions)
+	return exportFn(ctx, resolved.Path, outputPath, stderr, exportOptions)
 }
 
 func isTerminalWriter(writer io.Writer) bool {

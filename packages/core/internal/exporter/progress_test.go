@@ -54,6 +54,22 @@ func TestEstimateExportFrameTotalFallsBackToSourceFramesWithoutFPSConversion(t *
 	}
 }
 
+func TestEstimateExportFrameTotalDoesNotUseFullSourceFramesAfterAt(t *testing.T) {
+	info := InputProgressInfo{
+		SourceFPS:       0,
+		FrameCount:      240,
+		DurationSeconds: 0,
+	}
+	layout := Layout{FPS: 24}
+	options := Options{HasAt: true, AtSeconds: 5}
+
+	total := estimateExportFrameTotal(info, layout, options)
+
+	if total != 0 {
+		t.Fatalf("total = %d, want 0", total)
+	}
+}
+
 func TestEstimateExportFrameTotalRejectsSourceFramesWhenFPSConversionIsRequested(t *testing.T) {
 	info := InputProgressInfo{
 		SourceFPS:       60,
@@ -107,7 +123,7 @@ func TestProgressReporterInteractiveKnownTotal(t *testing.T) {
 		"output: 320x184 @ 24.000 fps\n",
 		"\x1b[2K\rexporting video: 0/10 frames 0%",
 		"\x1b[2K\rexporting video: 10/10 frames 100%\n",
-		"finalizing mp4...\n",
+		"finalizing output...\n",
 		"export complete: out.mp4\n",
 	} {
 		if !strings.Contains(got, want) {
@@ -150,6 +166,35 @@ func TestProgressReporterUnknownTotalDoesNotPrintPercent(t *testing.T) {
 	if strings.Contains(got, "\nexporting video: 17 frames\n") ||
 		strings.Contains(got, "\nexporting video: 101 frames\n") {
 		t.Fatalf("unknown-total non-TTY progress was not sparse: %q", got)
+	}
+}
+
+func TestProgressReporterUsesCustomLabels(t *testing.T) {
+	var out bytes.Buffer
+	reporter := newProgressReporter(&out, progressReporterOptions{
+		Interactive:     false,
+		TotalFrames:     10,
+		Label:           "animated export",
+		FinalizingLabel: "finalizing gif...",
+		Now:             time.Now,
+	})
+
+	reporter.Start("in.mp4", "out.gif", Layout{OutputWidth: 320, OutputHeight: 184, FPS: 24})
+	reporter.Frame(5)
+	reporter.Finalizing()
+
+	got := out.String()
+	for _, want := range []string{
+		"exporting animated export: 0/10 frames 0%\n",
+		"exporting animated export: 5/10 frames 50%\n",
+		"finalizing gif...\n",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("progress output missing %q in %q", want, got)
+		}
+	}
+	if strings.Contains(got, "exporting video:") || strings.Contains(got, "finalizing mp4...") {
+		t.Fatalf("progress output used default labels despite custom labels: %q", got)
 	}
 }
 

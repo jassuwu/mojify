@@ -3,10 +3,11 @@ package cli
 import (
 	"fmt"
 	"math"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/jass/mojify/packages/core/internal/exporter"
 )
 
 type CommandKind int
@@ -20,12 +21,16 @@ const (
 )
 
 type ExportOptions struct {
-	Width     int
-	FPS       float64
-	Bitrate   string
-	Overwrite bool
-	Stats     bool
-	Workers   int
+	Width           int
+	FPS             float64
+	Bitrate         string
+	Overwrite       bool
+	Stats           bool
+	Workers         int
+	HasAt           bool
+	AtSeconds       float64
+	HasDuration     bool
+	DurationSeconds float64
 }
 
 type Command struct {
@@ -66,21 +71,26 @@ Terminal-first video playback with colored, edge-aware character frames.
 Usage:
   mojify play [--stats] [--no-audio] <source>           Play source media in the terminal
   mojify probe <source>                                 Print source media and render metadata
-  mojify export [options] <source> <output.mp4>         Export Mojify visuals to an MP4 file
+  mojify export [options] <source> <output>             Export Mojify output to a supported file format
   mojify --version                                      Print the installed Mojify version
   mojify --help                                         Show this help
 
 Source:
   <source> may be a local video file or an HTTP(S) platform URL.
 
+Export output formats:
+  .mp4, .webm, .mov, .gif, .apng, .png, .jpg, .jpeg, .txt, .ansi
+
 Play options:
   --stats             Print playback timing stats after completion
   --no-audio          Disable live playback audio for play
 
 Export options:
-  --width <px>        Output MP4 width in pixels
-  --fps <n>           Output frames per second
+  --width <n>         Pixel width for media/image outputs; columns for text outputs
+  --fps <n>           Output frames per second for time-based outputs
   --bitrate <value>   Video bitrate, digits optionally followed by k, K, m, or M
+  --at <timestamp>    Start from timestamp: 10, 10s, 1:23, or 01:02:03.250
+  --duration <value>  Limit time-based exports; valid for video and animated outputs
   --overwrite         Replace an existing output file
   --stats             Print export timing stats after completion
   --workers <n>       Render and rasterize with n workers
@@ -178,6 +188,28 @@ func parseExportCommand(args []string) (Command, error) {
 			}
 			seenOverwrite = true
 			options.Overwrite = true
+		case "--at":
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("export requires a value for --at")
+			}
+			i++
+			seconds, err := parseExportTimeValue(args[i])
+			if err != nil {
+				return Command{}, fmt.Errorf("export requires --at to be a timestamp: %w", err)
+			}
+			options.HasAt = true
+			options.AtSeconds = seconds
+		case "--duration":
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("export requires a value for --duration")
+			}
+			i++
+			seconds, err := parseExportTimeValue(args[i])
+			if err != nil || seconds <= 0 {
+				return Command{}, fmt.Errorf("export requires --duration to be greater than 0")
+			}
+			options.HasDuration = true
+			options.DurationSeconds = seconds
 		case "--stats":
 			if seenStats {
 				return Command{}, fmt.Errorf("export accepts --stats only once")
@@ -208,7 +240,7 @@ func parseExportCommand(args []string) (Command, error) {
 	}
 
 	if len(paths) != 2 {
-		return Command{}, fmt.Errorf("export requires an input video and output MP4 path")
+		return Command{}, fmt.Errorf("export requires an input media path and output path")
 	}
 	if hasUnsupportedSourceProtocol(paths[0]) {
 		return Command{}, fmt.Errorf("export accepts local video file paths or HTTP(S) platform URLs only")
@@ -216,8 +248,12 @@ func parseExportCommand(args []string) (Command, error) {
 	if hasProtocolInput(paths[1]) {
 		return Command{}, fmt.Errorf("export accepts local output file paths only")
 	}
-	if !strings.EqualFold(filepath.Ext(paths[1]), ".mp4") {
-		return Command{}, fmt.Errorf("export output must use a .mp4 extension")
+	format, err := exporter.ResolveOutputFormat(paths[1])
+	if err != nil {
+		return Command{}, err
+	}
+	if options.HasDuration && format.SingleFrame {
+		return Command{}, fmt.Errorf("export --duration is valid only for video and animated outputs")
 	}
 
 	return Command{
@@ -246,6 +282,43 @@ func isValidExportBitrate(value string) bool {
 		}
 	}
 	return true
+}
+
+func parseExportTimeValue(value string) (float64, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0, fmt.Errorf("time value is required")
+	}
+	if strings.HasSuffix(value, "s") {
+		seconds, err := strconv.ParseFloat(strings.TrimSuffix(value, "s"), 64)
+		if err != nil || seconds < 0 || math.IsNaN(seconds) || math.IsInf(seconds, 0) {
+			return 0, fmt.Errorf("invalid time value %q", value)
+		}
+		return seconds, nil
+	}
+	if strings.Contains(value, ":") {
+		parts := strings.Split(value, ":")
+		if len(parts) < 2 || len(parts) > 3 {
+			return 0, fmt.Errorf("invalid time value %q", value)
+		}
+		total := 0.0
+		for i, part := range parts {
+			number, err := strconv.ParseFloat(part, 64)
+			if err != nil || number < 0 || math.IsNaN(number) || math.IsInf(number, 0) {
+				return 0, fmt.Errorf("invalid time value %q", value)
+			}
+			if i < len(parts)-1 && number >= 60 {
+				return 0, fmt.Errorf("invalid time value %q", value)
+			}
+			total = total*60 + number
+		}
+		return total, nil
+	}
+	seconds, err := strconv.ParseFloat(value, 64)
+	if err != nil || seconds < 0 || math.IsNaN(seconds) || math.IsInf(seconds, 0) {
+		return 0, fmt.Errorf("invalid time value %q", value)
+	}
+	return seconds, nil
 }
 
 func isHTTPSource(input string) bool {

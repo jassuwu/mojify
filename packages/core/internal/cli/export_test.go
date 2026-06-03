@@ -47,7 +47,7 @@ func TestRunExportRejectsMissingYTDLPForPlatformURL(t *testing.T) {
 	}
 }
 
-func TestRunExportRejectsExistingOutputBeforeResolvingPlatformURL(t *testing.T) {
+func TestRunExportDefersOutputValidationToExporter(t *testing.T) {
 	dir := t.TempDir()
 	output := filepath.Join(dir, "out.mp4")
 	if err := os.WriteFile(output, []byte("existing"), 0o644); err != nil {
@@ -55,15 +55,24 @@ func TestRunExportRejectsExistingOutputBeforeResolvingPlatformURL(t *testing.T) 
 	}
 	argsPath := filepath.Join(dir, "yt-dlp-args.txt")
 	fake := writeFakeYTDLP(t, fakeYTDLPOptions{ArgsPath: argsPath})
+	exportErr := errors.New("stop after export handoff")
+	var gotInputPath string
 
 	err := runExportWithOptions(context.Background(), "https://example.com/watch?v=demo", output, io.Discard, ExportOptions{}, exportRunnerOptions{
 		YTDLPPath: fake.Path,
+		Export: func(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options exporter.Options) error {
+			gotInputPath = inputPath
+			return exportErr
+		},
 	})
-	if err == nil || !strings.Contains(err.Error(), "output exists") {
-		t.Fatalf("error = %v, want existing output rejection", err)
+	if !errors.Is(err, exportErr) {
+		t.Fatalf("error = %v, want export sentinel", err)
 	}
-	if _, err := os.Stat(argsPath); !errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("yt-dlp was invoked before output preflight, stat err = %v", err)
+	if _, err := os.Stat(argsPath); err != nil {
+		t.Fatalf("yt-dlp was not invoked before export handoff: %v", err)
+	}
+	if !strings.HasSuffix(gotInputPath, "Demo_Title [abc123].mp4") {
+		t.Fatalf("export input path = %q, want resolved downloaded file", gotInputPath)
 	}
 }
 
@@ -75,7 +84,7 @@ func TestRunExportUsesOriginalURLForProgressAndResolvedPathForExport(t *testing.
 
 	err := runExportWithOptions(context.Background(), "https://example.com/watch?v=demo", "out.mp4", io.Discard, ExportOptions{}, exportRunnerOptions{
 		YTDLPPath: fake.Path,
-		ExportMP4: func(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options exporter.Options) error {
+		Export: func(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options exporter.Options) error {
 			gotInputPath = inputPath
 			gotInputLabel = options.InputLabel
 			if _, err := os.Stat(inputPath); err != nil {
@@ -92,5 +101,34 @@ func TestRunExportUsesOriginalURLForProgressAndResolvedPathForExport(t *testing.
 	}
 	if gotInputLabel != "https://example.com/watch?v=demo" {
 		t.Fatalf("InputLabel = %q, want original URL", gotInputLabel)
+	}
+}
+
+func TestRunExportPassesTimeOptionsAndUsesGeneralExporter(t *testing.T) {
+	exportErr := errors.New("stop after export handoff")
+	var gotOptions exporter.Options
+
+	err := runExportWithOptions(context.Background(), "clip.mov", "out.gif", io.Discard, ExportOptions{
+		HasAt:           true,
+		AtSeconds:       10.5,
+		HasDuration:     true,
+		DurationSeconds: 3,
+		Width:           320,
+		FPS:             12,
+		Overwrite:       true,
+	}, exportRunnerOptions{
+		Export: func(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options exporter.Options) error {
+			gotOptions = options
+			return exportErr
+		},
+	})
+	if !errors.Is(err, exportErr) {
+		t.Fatalf("error = %v, want export sentinel", err)
+	}
+	if !gotOptions.HasAt || gotOptions.AtSeconds != 10.5 {
+		t.Fatalf("At = (%v, %v), want (true, 10.5)", gotOptions.HasAt, gotOptions.AtSeconds)
+	}
+	if !gotOptions.HasDuration || gotOptions.DurationSeconds != 3 {
+		t.Fatalf("Duration = (%v, %v), want (true, 3)", gotOptions.HasDuration, gotOptions.DurationSeconds)
 	}
 }

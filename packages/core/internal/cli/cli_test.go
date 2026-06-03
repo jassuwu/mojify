@@ -1,6 +1,9 @@
 package cli
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestParseBareCommandShowsHelp(t *testing.T) {
 	cmd, err := Parse([]string{})
@@ -263,6 +266,12 @@ func TestParseExportMissingOutput(t *testing.T) {
 	if err == nil {
 		t.Fatal("Parse returned nil error for missing export output")
 	}
+	if strings.Contains(err.Error(), "MP4") {
+		t.Fatalf("missing output error = %q, want format-neutral wording", err.Error())
+	}
+	if !strings.Contains(err.Error(), "output path") {
+		t.Fatalf("missing output error = %q, want output path wording", err.Error())
+	}
 }
 
 func TestParseExportRejectsExtraInputs(t *testing.T) {
@@ -342,9 +351,89 @@ func TestParseExportRejectsProtocolOutput(t *testing.T) {
 }
 
 func TestParseExportRejectsNonMP4Output(t *testing.T) {
-	_, err := Parse([]string{"export", "clip.mov", "clip.mov"})
+	_, err := Parse([]string{"export", "clip.mov", "clip.webp"})
 	if err == nil {
-		t.Fatal("Parse returned nil error for non-MP4 export output")
+		t.Fatal("Parse returned nil error for unsupported export output")
+	}
+}
+
+func TestParseExportAcceptsCuratedOutputExtensions(t *testing.T) {
+	for _, output := range []string{
+		"out.mp4", "out.webm", "out.mov", "out.gif", "out.apng",
+		"out.png", "out.jpg", "out.jpeg", "out.txt", "out.ansi",
+	} {
+		cmd, err := Parse([]string{"export", "clip.mov", output})
+		if err != nil {
+			t.Fatalf("Parse returned error for output %q: %v", output, err)
+		}
+		if cmd.OutputPath != output {
+			t.Fatalf("OutputPath = %q, want %q", cmd.OutputPath, output)
+		}
+	}
+}
+
+func TestParseExportRejectsUnsupportedOutputExtension(t *testing.T) {
+	for _, output := range []string{"out.webp", "out.bmp", "out"} {
+		_, err := Parse([]string{"export", "clip.mov", output})
+		if err == nil {
+			t.Fatalf("Parse returned nil error for unsupported output %q", output)
+		}
+	}
+}
+
+func TestParseExportAtAndDuration(t *testing.T) {
+	cmd, err := Parse([]string{
+		"export",
+		"--at", "01:02:03.250",
+		"--duration", "3.5s",
+		"clip.mov",
+		"out.gif",
+	})
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+	if !cmd.Export.HasAt || cmd.Export.AtSeconds != 3723.25 {
+		t.Fatalf("At = (%v, %v), want (true, 3723.25)", cmd.Export.HasAt, cmd.Export.AtSeconds)
+	}
+	if !cmd.Export.HasDuration || cmd.Export.DurationSeconds != 3.5 {
+		t.Fatalf("Duration = (%v, %v), want (true, 3.5)", cmd.Export.HasDuration, cmd.Export.DurationSeconds)
+	}
+}
+
+func TestParseExportAcceptsTimeValueShapes(t *testing.T) {
+	tests := map[string]float64{
+		"10":          10,
+		"10s":         10,
+		"90.5s":       90.5,
+		"1:23":        83,
+		"01:02:03.25": 3723.25,
+	}
+	for value, want := range tests {
+		cmd, err := Parse([]string{"export", "--at", value, "clip.mov", "out.png"})
+		if err != nil {
+			t.Fatalf("Parse --at %q returned error: %v", value, err)
+		}
+		if cmd.Export.AtSeconds != want {
+			t.Fatalf("AtSeconds for %q = %v, want %v", value, cmd.Export.AtSeconds, want)
+		}
+	}
+}
+
+func TestParseExportRejectsDurationForSingleFrameOutputs(t *testing.T) {
+	for _, output := range []string{"out.png", "out.jpg", "out.jpeg", "out.txt", "out.ansi"} {
+		_, err := Parse([]string{"export", "--duration", "3s", "clip.mov", output})
+		if err == nil {
+			t.Fatalf("Parse returned nil error for --duration with %s", output)
+		}
+	}
+}
+
+func TestParseExportRejectsInvalidTimeValues(t *testing.T) {
+	for _, value := range []string{"", "abc", "-1s", "1:2:3:4", "1m"} {
+		_, err := Parse([]string{"export", "--at", value, "clip.mov", "out.png"})
+		if err == nil {
+			t.Fatalf("Parse returned nil error for invalid --at %q", value)
+		}
 	}
 }
 
@@ -384,13 +473,16 @@ func TestHelpTextMentionsCommands(t *testing.T) {
 		"mojify --version",
 		"mojify probe <source>",
 		"Print source media and render metadata",
-		"mojify export [options] <source> <output.mp4>",
-		"Export Mojify visuals to an MP4 file",
+		"mojify export [options] <source> <output>",
+		"Export Mojify output to a supported file format",
 		"<source> may be a local video file or an HTTP(S) platform URL",
+		".mp4, .webm, .mov, .gif, .apng, .png, .jpg, .jpeg, .txt, .ansi",
 		"yt-dlp is required for platform URL inputs",
-		"--width <px>",
+		"--width <n>",
 		"--fps <n>",
 		"--bitrate <value>",
+		"--at <timestamp>",
+		"--duration <value>",
 		"--overwrite",
 		"--stats",
 		"--no-audio",

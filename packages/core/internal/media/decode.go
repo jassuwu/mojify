@@ -15,7 +15,7 @@ func DecodeArgs(path string, width int, height int) []string {
 }
 
 func ExportDecodeArgs(path string, width int, height int, fps float64) []string {
-	return decodeArgs(path, width, height, fps)
+	return ExportDecodeArgsWithOptions(ExportDecodeOptions{Path: path, Width: width, Height: height, FPS: fps})
 }
 
 func decodeArgs(path string, width int, height int, fps float64) []string {
@@ -35,6 +35,42 @@ func decodeArgs(path string, width int, height int, fps float64) []string {
 	}
 }
 
+type ExportDecodeOptions struct {
+	Path            string
+	Width           int
+	Height          int
+	FPS             float64
+	HasAt           bool
+	AtSeconds       float64
+	HasDuration     bool
+	DurationSeconds float64
+}
+
+func ExportDecodeArgsWithOptions(options ExportDecodeOptions) []string {
+	widthText := strconv.Itoa(options.Width)
+	heightText := strconv.Itoa(options.Height)
+	filter := "scale=" + widthText + ":" + heightText + ":force_original_aspect_ratio=decrease,pad=" + widthText + ":" + heightText + ":(ow-iw)/2:(oh-ih)/2"
+	if options.FPS > 0 {
+		filter += ",fps=" + formatFPS(options.FPS)
+	}
+
+	args := []string{"-v", "error"}
+	if options.HasAt {
+		args = append(args, "-ss", formatFPS(options.AtSeconds))
+	}
+	args = append(args, "-i", options.Path)
+	if options.HasDuration {
+		args = append(args, "-t", formatFPS(options.DurationSeconds))
+	}
+	args = append(args,
+		"-vf", filter,
+		"-f", "rawvideo",
+		"-pix_fmt", "rgb24",
+		"-",
+	)
+	return args
+}
+
 func StartDecoder(path string, width int, height int) (*exec.Cmd, io.ReadCloser, error) {
 	return StartDecoderContext(context.Background(), path, width, height)
 }
@@ -52,7 +88,11 @@ func StartDecoderContext(ctx context.Context, path string, width int, height int
 }
 
 func StartExportDecoderContext(ctx context.Context, path string, width int, height int, fps float64) (*exec.Cmd, io.ReadCloser, error) {
-	cmd := exec.CommandContext(ctx, "ffmpeg", ExportDecodeArgs(path, width, height, fps)...)
+	return StartExportDecoderWithOptions(ctx, ExportDecodeOptions{Path: path, Width: width, Height: height, FPS: fps})
+}
+
+func StartExportDecoderWithOptions(ctx context.Context, options ExportDecodeOptions) (*exec.Cmd, io.ReadCloser, error) {
+	cmd := exec.CommandContext(ctx, "ffmpeg", ExportDecodeArgsWithOptions(options)...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, nil, err

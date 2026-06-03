@@ -22,9 +22,11 @@ type InputProgressInfo struct {
 }
 
 type progressReporterOptions struct {
-	Interactive bool
-	TotalFrames int
-	Now         func() time.Time
+	Interactive     bool
+	TotalFrames     int
+	Label           string
+	FinalizingLabel string
+	Now             func() time.Time
 }
 
 type progressReporter struct {
@@ -32,6 +34,8 @@ type progressReporter struct {
 	out             io.Writer
 	interactive     bool
 	totalFrames     int
+	label           string
+	finalizingLabel string
 	now             func() time.Time
 	lastUpdate      time.Time
 	nextLogPercent  int
@@ -52,6 +56,9 @@ func estimateExportFrameTotal(info InputProgressInfo, layout Layout, options Opt
 			return total
 		}
 	}
+	if options.HasAt && !options.HasDuration {
+		return 0
+	}
 	if options.FPS <= 0 && info.FrameCount > 0 {
 		return info.FrameCount
 	}
@@ -63,13 +70,23 @@ func newProgressReporter(out io.Writer, options progressReporterOptions) *progre
 	if now == nil {
 		now = time.Now
 	}
+	label := options.Label
+	if label == "" {
+		label = "video"
+	}
+	finalizingLabel := options.FinalizingLabel
+	if finalizingLabel == "" {
+		finalizingLabel = "finalizing output..."
+	}
 	return &progressReporter{
-		out:            out,
-		interactive:    options.Interactive,
-		totalFrames:    max(options.TotalFrames, 0),
-		now:            now,
-		nextLogPercent: progressLogStepPercent,
-		nextLogFrame:   progressLogStepFrames,
+		out:             out,
+		interactive:     options.Interactive,
+		totalFrames:     max(options.TotalFrames, 0),
+		label:           label,
+		finalizingLabel: finalizingLabel,
+		now:             now,
+		nextLogPercent:  progressLogStepPercent,
+		nextLogFrame:    progressLogStepFrames,
 	}
 }
 
@@ -133,7 +150,7 @@ func (p *progressReporter) Finalizing() {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.writePhaseLocked("finalizing mp4...")
+	p.writePhaseLocked(p.finalizingLabel)
 }
 
 func (p *progressReporter) Complete(outputPath string) {
@@ -181,17 +198,17 @@ func (p *progressReporter) errorLineLocked() {
 
 func (p *progressReporter) formatFrameStatus(renderedFrames int, complete bool) string {
 	if p.totalFrames <= 0 {
-		return fmt.Sprintf("exporting video: %d frames", renderedFrames)
+		return fmt.Sprintf("exporting %s: %d frames", p.label, renderedFrames)
 	}
 	if complete && renderedFrames != p.totalFrames {
-		return fmt.Sprintf("exporting video: %d frames complete", renderedFrames)
+		return fmt.Sprintf("exporting %s: %d frames complete", p.label, renderedFrames)
 	}
 	percent := p.clampedPercent(renderedFrames, complete)
 	displayFrames := renderedFrames
 	if complete {
 		displayFrames = p.totalFrames
 	}
-	return fmt.Sprintf("exporting video: %d/%d frames %d%%", displayFrames, p.totalFrames, percent)
+	return fmt.Sprintf("exporting %s: %d/%d frames %d%%", p.label, displayFrames, p.totalFrames, percent)
 }
 
 func (p *progressReporter) clampedPercent(renderedFrames int, complete bool) int {

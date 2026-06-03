@@ -70,3 +70,24 @@ func TestResolveLayoutRejectsInvalidOverrides(t *testing.T) {
 		t.Fatal("ResolveLayout returned nil error for negative requested FPS")
 	}
 }
+
+func TestResolveLayoutUsesWidthAsColumnsForTextOutput(t *testing.T) {
+	layout, err := ResolveLayout(InputInfo{Width: 1920, Height: 1080, FPS: 24}, Options{
+		Width: 80,
+		Format: OutputFormat{
+			Extension:   ".txt",
+			Family:      OutputFamilyText,
+			Text:        true,
+			SingleFrame: true,
+		},
+	})
+	if err != nil {
+		t.Fatalf("ResolveLayout returned error: %v", err)
+	}
+	if layout.Grid.Cols != 80 {
+		t.Fatalf("Grid.Cols = %d, want 80", layout.Grid.Cols)
+	}
+	if layout.OutputWidth != 80*ExportCellWidth {
+		t.Fatalf("OutputWidth = %d, want %d", layout.OutputWidth, 80*ExportCellWidth)
+	}
+}

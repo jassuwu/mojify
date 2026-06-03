@@ -52,6 +52,40 @@ func TestExportDecodeArgsWithFPS(t *testing.T) {
 	}
 }
 
+func TestExportDecodeArgsWithAtAndDuration(t *testing.T) {
+	args := ExportDecodeArgsWithOptions(ExportDecodeOptions{
+		Path:            "clip.mov",
+		Width:           80,
+		Height:          24,
+		FPS:             12,
+		HasAt:           true,
+		AtSeconds:       10.5,
+		HasDuration:     true,
+		DurationSeconds: 3,
+	})
+	want := []string{
+		"-v", "error",
+		"-ss", "10.5",
+		"-i", "clip.mov",
+		"-t", "3",
+		"-vf", "scale=80:24:force_original_aspect_ratio=decrease,pad=80:24:(ow-iw)/2:(oh-ih)/2,fps=12",
+		"-f", "rawvideo",
+		"-pix_fmt", "rgb24",
+		"-",
+	}
+	if !reflect.DeepEqual(args, want) {
+		t.Fatalf("args = %#v, want %#v", args, want)
+	}
+}
+
+func TestExportDecodeArgsWithoutTimeOptionsMatchesExistingShape(t *testing.T) {
+	args := ExportDecodeArgsWithOptions(ExportDecodeOptions{Path: "clip.mov", Width: 80, Height: 24})
+	want := ExportDecodeArgs("clip.mov", 80, 24, 0)
+	if !reflect.DeepEqual(args, want) {
+		t.Fatalf("args = %#v, want %#v", args, want)
+	}
+}
+
 func TestReadRawFrame(t *testing.T) {
 	data := []byte{1, 2, 3, 4, 5, 6}
 	frame, err := ReadRawFrame(bytes.NewReader(data), 1, 2)

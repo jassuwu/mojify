@@ -188,6 +188,52 @@ func TestRawVideoEncodeArgsSeeksAndTrimsAudioInput(t *testing.T) {
 	}
 }
 
+func TestRawVideoEncodeArgsRejectsInvalidWindowWithFormatNeutralErrors(t *testing.T) {
+	tests := []struct {
+		name    string
+		options RawVideoEncodeOptions
+		want    string
+	}{
+		{
+			name: "negative start offset",
+			options: RawVideoEncodeOptions{
+				Format:     EncodeFormatGIF,
+				OutputPath: "out.gif",
+				Width:      320,
+				Height:     184,
+				FPS:        12,
+				HasAt:      true,
+				AtSeconds:  -1,
+			},
+			want: "start offset must be non-negative",
+		},
+		{
+			name: "zero duration",
+			options: RawVideoEncodeOptions{
+				Format:          EncodeFormatPNG,
+				OutputPath:      "out.png",
+				Width:           320,
+				Height:          184,
+				FPS:             1,
+				HasDuration:     true,
+				DurationSeconds: 0,
+			},
+			want: "duration must be greater than 0",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := RawVideoEncodeArgs(tc.options)
+			if err == nil {
+				t.Fatal("RawVideoEncodeArgs returned nil error")
+			}
+			if err.Error() != tc.want {
+				t.Fatalf("error = %q, want %q", err.Error(), tc.want)
+			}
+		})
+	}
+}
+
 func TestRawVideoEncodeArgsForMOV(t *testing.T) {
 	args, err := RawVideoEncodeArgs(RawVideoEncodeOptions{
 		Format:       EncodeFormatMOV,

@@ -206,13 +206,12 @@ func exportSingleFrameMedia(ctx context.Context, inputPath string, outputPath st
 		return err
 	}
 	encodeCmd, encodePipe, err := media.StartRawVideoEncoderContext(ctx, media.RawVideoEncodeOptions{
-		Format:      encodeFormat,
-		OutputPath:  outputPath,
-		Width:       layout.OutputWidth,
-		Height:      layout.OutputHeight,
-		FPS:         1,
-		Overwrite:   options.Overwrite,
-		SingleFrame: true,
+		Format:     encodeFormat,
+		OutputPath: outputPath,
+		Width:      layout.OutputWidth,
+		Height:     layout.OutputHeight,
+		FPS:        1,
+		Overwrite:  options.Overwrite,
 	}, stderr)
 	if err != nil {
 		return fmt.Errorf("start encoder: %w", err)

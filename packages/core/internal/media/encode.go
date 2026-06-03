@@ -44,7 +44,6 @@ type RawVideoEncodeOptions struct {
 	Bitrate         string
 	Overwrite       bool
 	IncludeAudio    bool
-	SingleFrame     bool
 	HasAt           bool
 	AtSeconds       float64
 	HasDuration     bool
@@ -85,10 +84,10 @@ func RawVideoEncodeArgs(options RawVideoEncodeOptions) ([]string, error) {
 		return nil, fmt.Errorf("input path is required for audio-capable export")
 	}
 	if options.HasAt && options.AtSeconds < 0 {
-		return nil, fmt.Errorf("audio start offset must be non-negative")
+		return nil, fmt.Errorf("start offset must be non-negative")
 	}
 	if options.HasDuration && options.DurationSeconds <= 0 {
-		return nil, fmt.Errorf("audio duration must be greater than 0")
+		return nil, fmt.Errorf("duration must be greater than 0")
 	}
 
 	overwriteFlag := "-n"

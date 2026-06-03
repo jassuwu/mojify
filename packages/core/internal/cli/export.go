@@ -33,9 +33,6 @@ func runExportWithOptions(ctx context.Context, inputPath string, outputPath stri
 		HasDuration:         options.HasDuration,
 		DurationSeconds:     options.DurationSeconds,
 	}
-	if err := exporter.CheckOutputPath(outputPath, exportOptions); err != nil {
-		return err
-	}
 
 	resolved, err := resolveSourceMediaWithOptions(ctx, inputPath, sourceResolverOptions{
 		Stderr:    stderr,

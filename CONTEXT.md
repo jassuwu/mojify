@@ -44,8 +44,32 @@ _Avoid_: Exported media audio, audio muxing, mute controls, volume controls
 A product utility output that renders Mojify visuals into an MP4 file and preserves source audio content when available.
 _Avoid_: Terminal playback, silent export by default
 
+**Curated multi-format export**:
+The export stage where `mojify export SOURCE OUTPUT` selects a supported output family by extension: video, animated visual, still image, or still text. Mojify owns these output contracts even when FFmpeg performs the encoding.
+_Avoid_: Any FFmpeg-compatible output, raw format passthrough
+
+**Timestamp export selection**:
+The `--at` and `--duration` model for choosing where export starts and, for time-based outputs, how much source media to render. Selection is timestamp-based, not exact source-frame addressing.
+_Avoid_: Exact frame selection, frame number export
+
+**Still export**:
+A single-frame visual export selected by an image extension such as `.png`, `.jpg`, or `.jpeg`.
+_Avoid_: Animated image export, source-frame dump
+
+**Animated export**:
+A time-based visual export selected by an animated format extension such as `.gif` or `.apng`, without source audio.
+_Avoid_: Video export with audio, terminal recording
+
+**Text export**:
+Single-frame `.txt` or `.ansi` output generated from a rendered Mojify character frame without rasterizing to pixels.
+_Avoid_: Animated text export, terminal recording
+
+**WebP deferral**:
+The explicit decision to leave `.webp` out of the curated export set for this stage until its static and animated behavior can be specified and tested.
+_Avoid_: Accidental WebP support, arbitrary image conversion
+
 **Export progress**:
-User-facing export status on stderr that reports rendered frame progress against the export frame count when the total is knowable, and an indeterminate rendered-frame count when it is not. `100%` means Mojify has rendered and written all visual frames to the MP4 encoder, after which the status should move to MP4 finalization; export progress should be terminal-friendly when interactive, log-friendly otherwise, and should not claim an ETA or time remaining by default.
+User-facing export status on stderr that reports rendered frame progress against the export frame count when the total is knowable, and an indeterminate rendered-frame count when it is not. `100%` means Mojify has rendered and written all visual frames to the active output encoder or serializer, after which the status should move to format finalization when applicable; export progress should be terminal-friendly when interactive, log-friendly otherwise, and should not claim an ETA or time remaining by default.
 _Avoid_: Export ETA, FFmpeg progress, fake completion estimate
 
 **Export throughput hardening**:

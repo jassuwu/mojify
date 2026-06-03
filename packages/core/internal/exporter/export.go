@@ -133,6 +133,10 @@ func ExportMP4(ctx context.Context, inputPath string, outputPath string, stderr 
 	return nil
 }
 
+func Export(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options Options) error {
+	return ExportMP4(ctx, inputPath, outputPath, stderr, options)
+}
+
 func exportMetricsClock(options Options) exportClock {
 	if options.MetricsClock != nil {
 		return exportClockFunc(options.MetricsClock)

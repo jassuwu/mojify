@@ -23,6 +23,10 @@ type Options struct {
 	Workers             int
 	MetricsClock        func() time.Time
 	InputLabel          string
+	HasAt               bool
+	AtSeconds           float64
+	HasDuration         bool
+	DurationSeconds     float64
 }
 
 type InputInfo struct {

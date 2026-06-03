@@ -27,6 +27,7 @@ type Options struct {
 	AtSeconds           float64
 	HasDuration         bool
 	DurationSeconds     float64
+	Format              OutputFormat
 }
 
 type InputInfo struct {
@@ -62,6 +63,28 @@ func ResolveLayout(input InputInfo, options Options) (Layout, error) {
 	}
 	if options.FPS > 0 {
 		fps = options.FPS
+	}
+
+	if options.Format.Text {
+		cols := options.Width
+		if cols == 0 {
+			cols = min(input.Width, DefaultExportMaxWidth) / ExportCellWidth
+		}
+		if cols <= 0 {
+			cols = 1
+		}
+		outputWidth := cols * ExportCellWidth
+		derivedRows := int(math.Round(float64(cols) * float64(input.Height) / float64(input.Width)))
+		rows := max(derivedRows, 1)
+		return Layout{
+			OutputWidth:  outputWidth,
+			OutputHeight: rows * ExportCellHeight,
+			Grid: render.Grid{
+				Cols: cols,
+				Rows: rows,
+			},
+			FPS: fps,
+		}, nil
 	}
 
 	width := options.Width

@@ -105,15 +105,19 @@ func exportTimeBasedMedia(ctx context.Context, inputPath string, outputPath stri
 		return err
 	}
 	encodeCmd, encodePipe, err := media.StartRawVideoEncoderContext(ctx, media.RawVideoEncodeOptions{
-		Format:       encodeFormat,
-		InputPath:    inputPath,
-		OutputPath:   outputPath,
-		Width:        layout.OutputWidth,
-		Height:       layout.OutputHeight,
-		FPS:          layout.FPS,
-		Bitrate:      options.Bitrate,
-		Overwrite:    options.Overwrite,
-		IncludeAudio: format.SupportsAudio,
+		Format:          encodeFormat,
+		InputPath:       inputPath,
+		OutputPath:      outputPath,
+		Width:           layout.OutputWidth,
+		Height:          layout.OutputHeight,
+		FPS:             layout.FPS,
+		Bitrate:         options.Bitrate,
+		Overwrite:       options.Overwrite,
+		IncludeAudio:    format.SupportsAudio,
+		HasAt:           options.HasAt,
+		AtSeconds:       options.AtSeconds,
+		HasDuration:     options.HasDuration,
+		DurationSeconds: options.DurationSeconds,
 	}, progress.lineSafeWriter(stderr))
 	if err != nil {
 		return fmt.Errorf("start encoder: %w", err)
@@ -331,6 +335,16 @@ func encodeFormatForOutput(format OutputFormat) (media.EncodeFormat, error) {
 }
 
 func progressDuration(sourceDuration float64, options Options) float64 {
+	if options.HasAt && sourceDuration > 0 {
+		remaining := sourceDuration - options.AtSeconds
+		if remaining <= 0 {
+			return 0
+		}
+		if options.HasDuration && options.DurationSeconds < remaining {
+			return options.DurationSeconds
+		}
+		return remaining
+	}
 	if options.HasDuration {
 		return options.DurationSeconds
 	}

@@ -49,6 +49,34 @@ func TestCheckOutputPathRejectsDurationForSingleFrameFormat(t *testing.T) {
 	}
 }
 
+func TestProgressDurationUsesSelectedWindowAfterAt(t *testing.T) {
+	got := progressDuration(12, Options{HasAt: true, AtSeconds: 5})
+	if got != 7 {
+		t.Fatalf("progressDuration = %v, want 7", got)
+	}
+}
+
+func TestProgressDurationDoesNotGoNegativeAfterAt(t *testing.T) {
+	got := progressDuration(4, Options{HasAt: true, AtSeconds: 5})
+	if got != 0 {
+		t.Fatalf("progressDuration = %v, want 0", got)
+	}
+}
+
+func TestProgressDurationPrefersExplicitDuration(t *testing.T) {
+	got := progressDuration(12, Options{HasAt: true, AtSeconds: 5, HasDuration: true, DurationSeconds: 2})
+	if got != 2 {
+		t.Fatalf("progressDuration = %v, want 2", got)
+	}
+}
+
+func TestProgressDurationClampsExplicitDurationToRemainingSource(t *testing.T) {
+	got := progressDuration(5, Options{HasAt: true, AtSeconds: 4, HasDuration: true, DurationSeconds: 10})
+	if got != 1 {
+		t.Fatalf("progressDuration = %v, want 1", got)
+	}
+}
+
 func TestExportRoutesByFormatFamily(t *testing.T) {
 	tests := []struct {
 		output string

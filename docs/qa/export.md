@@ -32,15 +32,20 @@ bun run qa:export
 Expected generated output:
 
 - `dist/qa/export/low-motion-bars-export.mp4`
+- `dist/qa/export/low-motion-bars-export.webm`
+- `dist/qa/export/low-motion-bars-export.mov`
 - `dist/qa/export/low-motion-bars-export.gif`
 - `dist/qa/export/low-motion-bars-export.apng`
 - `dist/qa/export/low-motion-bars-frame.png`
 - `dist/qa/export/low-motion-bars-frame.jpg`
+- `dist/qa/export/low-motion-bars-frame.jpeg`
 - `dist/qa/export/low-motion-bars-frame.txt`
 - `dist/qa/export/low-motion-bars-frame.ansi`
 - `ffprobe` reports a video or image stream for the synthetic media/image exports.
 - The exported synthetic media/image streams have width `320`.
 - The exported synthetic text files are non-empty.
+- Unsupported `.webp` output is rejected.
+- `--duration` is rejected for single-frame outputs.
 
 If a top-level `dist/` media file with an audio stream is present, `bun run qa:export` also writes:
 
@@ -116,10 +121,13 @@ The audio QA passes when each exported video file contains an audio stream. If t
 | Format | Output | Selection flags | QA check |
 | --- | --- | --- | --- |
 | `.mp4` | `low-motion-bars-export.mp4` | full synthetic clip | video stream, width `320` |
+| `.webm` | `low-motion-bars-export.webm` | `--at 0s --duration 2s` | video stream, width `320` |
+| `.mov` | `low-motion-bars-export.mov` | `--at 0s --duration 2s` | video stream, width `320` |
 | `.gif` | `low-motion-bars-export.gif` | `--at 0s --duration 2s` | video stream, width `320` |
 | `.apng` | `low-motion-bars-export.apng` | `--at 0s --duration 2s` | video stream, width `320` |
 | `.png` | `low-motion-bars-frame.png` | `--at 0s` | image stream, width `320` |
 | `.jpg` | `low-motion-bars-frame.jpg` | `--at 0s` | image stream, width `320` |
+| `.jpeg` | `low-motion-bars-frame.jpeg` | `--at 0s` | image stream, width `320` |
 | `.txt` | `low-motion-bars-frame.txt` | `--at 0s --width 80` | non-empty text |
 | `.ansi` | `low-motion-bars-frame.ansi` | `--at 0s --width 80` | non-empty ANSI text |
 | `.mp4`, `.webm`, `.mov` | `real-sample-export.<ext>` | `--duration 2s` with optional real sample | audio stream present |
@@ -133,7 +141,7 @@ The audio QA passes when each exported video file contains an audio stream. If t
 - Text outputs are non-empty single-frame exports.
 - `--at` works for video, animated, still image, and still text outputs.
 - `--duration` works for video and animated outputs.
-- `--duration` is rejected for still image and still text outputs.
+- `--duration` is rejected for still image outputs in automated QA and for all still image/text outputs by parser tests.
 - `.webp` remains unsupported in this stage.
 - Optional real-sample export writes `dist/qa/export/real-sample-export.mp4`, `.webm`, and `.mov`.
 - Optional real-sample export preserves source audio when the source has audio.

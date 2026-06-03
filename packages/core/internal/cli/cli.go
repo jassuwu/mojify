@@ -240,7 +240,7 @@ func parseExportCommand(args []string) (Command, error) {
 	}
 
 	if len(paths) != 2 {
-		return Command{}, fmt.Errorf("export requires an input video and output MP4 path")
+		return Command{}, fmt.Errorf("export requires an input media path and output path")
 	}
 	if hasUnsupportedSourceProtocol(paths[0]) {
 		return Command{}, fmt.Errorf("export accepts local video file paths or HTTP(S) platform URLs only")

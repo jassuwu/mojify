@@ -56,6 +56,9 @@ func estimateExportFrameTotal(info InputProgressInfo, layout Layout, options Opt
 			return total
 		}
 	}
+	if options.HasAt && !options.HasDuration {
+		return 0
+	}
 	if options.FPS <= 0 && info.FrameCount > 0 {
 		return info.FrameCount
 	}

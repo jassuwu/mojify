@@ -9,13 +9,17 @@ import (
 )
 
 type MP4EncodeOptions struct {
-	InputPath  string
-	OutputPath string
-	Width      int
-	Height     int
-	FPS        float64
-	Bitrate    string
-	Overwrite  bool
+	InputPath       string
+	OutputPath      string
+	Width           int
+	Height          int
+	FPS             float64
+	Bitrate         string
+	Overwrite       bool
+	HasAt           bool
+	AtSeconds       float64
+	HasDuration     bool
+	DurationSeconds float64
 }
 
 type EncodeFormat string
@@ -31,31 +35,39 @@ const (
 )
 
 type RawVideoEncodeOptions struct {
-	Format       EncodeFormat
-	InputPath    string
-	OutputPath   string
-	Width        int
-	Height       int
-	FPS          float64
-	Bitrate      string
-	Overwrite    bool
-	IncludeAudio bool
-	SingleFrame  bool
+	Format          EncodeFormat
+	InputPath       string
+	OutputPath      string
+	Width           int
+	Height          int
+	FPS             float64
+	Bitrate         string
+	Overwrite       bool
+	IncludeAudio    bool
+	SingleFrame     bool
+	HasAt           bool
+	AtSeconds       float64
+	HasDuration     bool
+	DurationSeconds float64
 }
 
 const defaultMP4VideoPreset = "veryfast"
 
 func MP4EncodeArgs(options MP4EncodeOptions) ([]string, error) {
 	return RawVideoEncodeArgs(RawVideoEncodeOptions{
-		Format:       EncodeFormatMP4,
-		InputPath:    options.InputPath,
-		OutputPath:   options.OutputPath,
-		Width:        options.Width,
-		Height:       options.Height,
-		FPS:          options.FPS,
-		Bitrate:      options.Bitrate,
-		Overwrite:    options.Overwrite,
-		IncludeAudio: true,
+		Format:          EncodeFormatMP4,
+		InputPath:       options.InputPath,
+		OutputPath:      options.OutputPath,
+		Width:           options.Width,
+		Height:          options.Height,
+		FPS:             options.FPS,
+		Bitrate:         options.Bitrate,
+		Overwrite:       options.Overwrite,
+		IncludeAudio:    true,
+		HasAt:           options.HasAt,
+		AtSeconds:       options.AtSeconds,
+		HasDuration:     options.HasDuration,
+		DurationSeconds: options.DurationSeconds,
 	})
 }
 
@@ -71,6 +83,12 @@ func RawVideoEncodeArgs(options RawVideoEncodeOptions) ([]string, error) {
 	}
 	if options.IncludeAudio && strings.TrimSpace(options.InputPath) == "" {
 		return nil, fmt.Errorf("input path is required for audio-capable export")
+	}
+	if options.HasAt && options.AtSeconds < 0 {
+		return nil, fmt.Errorf("audio start offset must be non-negative")
+	}
+	if options.HasDuration && options.DurationSeconds <= 0 {
+		return nil, fmt.Errorf("audio duration must be greater than 0")
 	}
 
 	overwriteFlag := "-n"
@@ -88,6 +106,12 @@ func RawVideoEncodeArgs(options RawVideoEncodeOptions) ([]string, error) {
 		"-i", "pipe:0",
 	}
 	if options.IncludeAudio {
+		if options.HasAt {
+			args = append(args, "-ss", formatFPS(options.AtSeconds))
+		}
+		if options.HasDuration {
+			args = append(args, "-t", formatFPS(options.DurationSeconds))
+		}
 		args = append(args, "-i", options.InputPath, "-map", "0:v:0", "-map", "1:a?")
 	}
 
@@ -129,15 +153,19 @@ func RawVideoEncodeArgs(options RawVideoEncodeOptions) ([]string, error) {
 
 func StartMP4EncoderContext(ctx context.Context, options MP4EncodeOptions, stderr io.Writer) (*exec.Cmd, io.WriteCloser, error) {
 	return StartRawVideoEncoderContext(ctx, RawVideoEncodeOptions{
-		Format:       EncodeFormatMP4,
-		InputPath:    options.InputPath,
-		OutputPath:   options.OutputPath,
-		Width:        options.Width,
-		Height:       options.Height,
-		FPS:          options.FPS,
-		Bitrate:      options.Bitrate,
-		Overwrite:    options.Overwrite,
-		IncludeAudio: true,
+		Format:          EncodeFormatMP4,
+		InputPath:       options.InputPath,
+		OutputPath:      options.OutputPath,
+		Width:           options.Width,
+		Height:          options.Height,
+		FPS:             options.FPS,
+		Bitrate:         options.Bitrate,
+		Overwrite:       options.Overwrite,
+		IncludeAudio:    true,
+		HasAt:           options.HasAt,
+		AtSeconds:       options.AtSeconds,
+		HasDuration:     options.HasDuration,
+		DurationSeconds: options.DurationSeconds,
 	}, stderr)
 }
 

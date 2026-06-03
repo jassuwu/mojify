@@ -1,6 +1,9 @@
 package cli
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestParseBareCommandShowsHelp(t *testing.T) {
 	cmd, err := Parse([]string{})
@@ -262,6 +265,12 @@ func TestParseExportMissingOutput(t *testing.T) {
 	_, err := Parse([]string{"export", "clip.mov"})
 	if err == nil {
 		t.Fatal("Parse returned nil error for missing export output")
+	}
+	if strings.Contains(err.Error(), "MP4") {
+		t.Fatalf("missing output error = %q, want format-neutral wording", err.Error())
+	}
+	if !strings.Contains(err.Error(), "output path") {
+		t.Fatalf("missing output error = %q, want output path wording", err.Error())
 	}
 }
 

@@ -145,6 +145,49 @@ func TestRawVideoEncodeArgsForWebM(t *testing.T) {
 	}
 }
 
+func TestRawVideoEncodeArgsSeeksAndTrimsAudioInput(t *testing.T) {
+	args, err := RawVideoEncodeArgs(RawVideoEncodeOptions{
+		Format:          EncodeFormatMP4,
+		InputPath:       "source.mov",
+		OutputPath:      "out.mp4",
+		Width:           320,
+		Height:          184,
+		FPS:             24,
+		IncludeAudio:    true,
+		HasAt:           true,
+		AtSeconds:       10.5,
+		HasDuration:     true,
+		DurationSeconds: 2.25,
+	})
+	if err != nil {
+		t.Fatalf("RawVideoEncodeArgs returned error: %v", err)
+	}
+
+	want := []string{
+		"-v", "error",
+		"-n",
+		"-f", "rawvideo",
+		"-pix_fmt", "rgb24",
+		"-s", "320x184",
+		"-r", "24",
+		"-i", "pipe:0",
+		"-ss", "10.5",
+		"-t", "2.25",
+		"-i", "source.mov",
+		"-map", "0:v:0",
+		"-map", "1:a?",
+		"-c:v", "libx264",
+		"-preset", "veryfast",
+		"-pix_fmt", "yuv420p",
+		"-c:a", "aac",
+		"-shortest",
+		"out.mp4",
+	}
+	if !reflect.DeepEqual(args, want) {
+		t.Fatalf("args = %#v, want %#v", args, want)
+	}
+}
+
 func TestRawVideoEncodeArgsForMOV(t *testing.T) {
 	args, err := RawVideoEncodeArgs(RawVideoEncodeOptions{
 		Format:       EncodeFormatMOV,

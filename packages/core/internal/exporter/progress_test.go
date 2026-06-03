@@ -54,6 +54,22 @@ func TestEstimateExportFrameTotalFallsBackToSourceFramesWithoutFPSConversion(t *
 	}
 }
 
+func TestEstimateExportFrameTotalDoesNotUseFullSourceFramesAfterAt(t *testing.T) {
+	info := InputProgressInfo{
+		SourceFPS:       0,
+		FrameCount:      240,
+		DurationSeconds: 0,
+	}
+	layout := Layout{FPS: 24}
+	options := Options{HasAt: true, AtSeconds: 5}
+
+	total := estimateExportFrameTotal(info, layout, options)
+
+	if total != 0 {
+		t.Fatalf("total = %d, want 0", total)
+	}
+}
+
 func TestEstimateExportFrameTotalRejectsSourceFramesWhenFPSConversionIsRequested(t *testing.T) {
 	info := InputProgressInfo{
 		SourceFPS:       60,

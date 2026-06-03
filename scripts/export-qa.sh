@@ -4,10 +4,13 @@ set -euo pipefail
 export_dir="dist/qa/export"
 synthetic_source="dist/qa/low-motion-bars.mp4"
 synthetic_mp4="${export_dir}/low-motion-bars-export.mp4"
+synthetic_webm="${export_dir}/low-motion-bars-export.webm"
+synthetic_mov="${export_dir}/low-motion-bars-export.mov"
 synthetic_gif="${export_dir}/low-motion-bars-export.gif"
 synthetic_apng="${export_dir}/low-motion-bars-export.apng"
 synthetic_png="${export_dir}/low-motion-bars-frame.png"
 synthetic_jpg="${export_dir}/low-motion-bars-frame.jpg"
+synthetic_jpeg="${export_dir}/low-motion-bars-frame.jpeg"
 synthetic_txt="${export_dir}/low-motion-bars-frame.txt"
 synthetic_ansi="${export_dir}/low-motion-bars-frame.ansi"
 
@@ -77,6 +80,16 @@ check_audio_stream() {
   printf '%s\n' "${audio_stream}"
 }
 
+expect_export_failure() {
+  local label="$1"
+  shift
+
+  if "$@" >"${export_dir}/${label}.out" 2>"${export_dir}/${label}.err"; then
+    printf 'Expected export command to fail for %s.\n' "${label}" >&2
+    exit 1
+  fi
+}
+
 if [[ ! -x ./bin/mojify ]]; then
   printf 'Missing ./bin/mojify. Run `bun run build` first.\n' >&2
   exit 1
@@ -91,20 +104,34 @@ mkdir -p "${export_dir}"
 
 printf 'Exporting synthetic QA clip across representative formats...\n'
 ./bin/mojify export --overwrite --width 320 "${synthetic_source}" "${synthetic_mp4}"
+./bin/mojify export --overwrite --width 320 --at 0s --duration 2s "${synthetic_source}" "${synthetic_webm}"
+./bin/mojify export --overwrite --width 320 --at 0s --duration 2s "${synthetic_source}" "${synthetic_mov}"
 ./bin/mojify export --overwrite --width 320 --at 0s --duration 2s "${synthetic_source}" "${synthetic_gif}"
 ./bin/mojify export --overwrite --width 320 --at 0s --duration 2s "${synthetic_source}" "${synthetic_apng}"
 ./bin/mojify export --overwrite --width 320 --at 0s "${synthetic_source}" "${synthetic_png}"
 ./bin/mojify export --overwrite --width 320 --at 0s "${synthetic_source}" "${synthetic_jpg}"
+./bin/mojify export --overwrite --width 320 --at 0s "${synthetic_source}" "${synthetic_jpeg}"
 ./bin/mojify export --overwrite --width 80 --at 0s "${synthetic_source}" "${synthetic_txt}"
 ./bin/mojify export --overwrite --width 80 --at 0s "${synthetic_source}" "${synthetic_ansi}"
 
 check_video_width "${synthetic_mp4}" "320"
+check_video_width "${synthetic_webm}" "320"
+check_video_width "${synthetic_mov}" "320"
 check_video_width "${synthetic_gif}" "320"
 check_video_width "${synthetic_apng}" "320"
 check_video_width "${synthetic_png}" "320"
 check_video_width "${synthetic_jpg}" "320"
+check_video_width "${synthetic_jpeg}" "320"
 require_nonempty_file "${synthetic_txt}"
 require_nonempty_file "${synthetic_ansi}"
+
+printf '\nChecking export validation failures...\n'
+expect_export_failure \
+  "unsupported-webp" \
+  ./bin/mojify export --overwrite --width 320 "${synthetic_source}" "${export_dir}/unsupported-frame.webp"
+expect_export_failure \
+  "duration-single-frame" \
+  ./bin/mojify export --overwrite --width 320 --duration 1s "${synthetic_source}" "${export_dir}/duration-frame.png"
 
 real_source=""
 while IFS= read -r -d '' candidate; do

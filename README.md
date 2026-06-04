@@ -28,7 +28,7 @@
 brew install jassuwu/tap/mojify
 ```
 
-Homebrew builds Mojify from the tagged source archive and installs the formula-declared runtime dependencies.
+Homebrew installs a Mojify bottle when one is available for your host, builds from the tagged source archive otherwise, and installs the formula-declared runtime dependencies.
 
 You can also download a macOS or Linux tarball from [GitHub Releases](https://github.com/jassuwu/mojify/releases) and place `mojify` on your `PATH`.
 

@@ -8,11 +8,22 @@ on:
 permissions:
   contents: write
 
+env:
+  FORMULA_NAME: mojify
+  TAP_NAME: jassuwu/tap
+  TAP_REPOSITORY: jassuwu/homebrew-tap
+
 jobs:
-  release:
-    name: Publish CLI release
+  prepare:
+    name: Publish CLI release and render formula
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      source_sha256: ${{ steps.source.outputs.sha256 }}
+      bottle_release: ${{ steps.meta.outputs.bottle_release }}
+      bottle_root_url: ${{ steps.meta.outputs.bottle_root_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,15 +35,26 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Validate release tag
+      - name: Capture release metadata
+        id: meta
         shell: bash
         run: |
           set -euo pipefail
-          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]+$ ]]; then
-            echo "Invalid Mojify release tag: $GITHUB_REF_NAME" >&2
+          tag="$GITHUB_REF_NAME"
+          if [[ ! "$tag" =~ ^v[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]+$ ]]; then
+            echo "Invalid Mojify release tag: $tag" >&2
             echo "Expected vYYYY.MM.DD.BUILD, for example v2026.06.02.145" >&2
             exit 1
           fi
+          version="${tag#v}"
+          bottle_release="mojify-${version}"
+          bottle_root_url="https://github.com/${TAP_REPOSITORY}/releases/download/${bottle_release}"
+          {
+            echo "tag=${tag}"
+            echo "version=${version}"
+            echo "bottle_release=${bottle_release}"
+            echo "bottle_root_url=${bottle_root_url}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Install FFmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
@@ -44,14 +66,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          scripts/package-release.sh "$version" dist/release
+          scripts/package-release.sh "${{ steps.meta.outputs.version }}" dist/release
 
       - name: Version smoke
         shell: bash
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
+          version="${{ steps.meta.outputs.version }}"
           tmp_dir="$(mktemp -d)"
           tar -xzf "dist/release/mojify_${version}_linux_amd64.tar.gz" -C "$tmp_dir"
           actual="$("$tmp_dir/mojify" --version)"
@@ -70,7 +91,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
+          version="${{ steps.meta.outputs.version }}"
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" dist/release/* \
               --repo "$GITHUB_REPOSITORY" \
@@ -96,35 +117,176 @@ jobs:
           sha256="$(shasum -a 256 "$archive_path" | awk '{print $1}')"
           echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
 
-      - name: Checkout Homebrew tap
-        uses: actions/checkout@v4
-        with:
-          repository: jassuwu/homebrew-tap
-          token: ${{ secrets.TAP_GITHUB_TOKEN }}
-          path: homebrew-tap
-
       - name: Render Homebrew formula
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p dist/homebrew/Formula
+          scripts/render-homebrew-formula.sh "$GITHUB_REF_NAME" "${{ steps.source.outputs.sha256 }}" > dist/homebrew/Formula/mojify.rb
+          ruby -c dist/homebrew/Formula/mojify.rb
+
+      - name: Upload rendered Homebrew formula
+        uses: actions/upload-artifact@v4
+        with:
+          name: homebrew-formula
+          path: dist/homebrew/Formula/mojify.rb
+          if-no-files-found: error
+
+  bottle:
+    name: Build Homebrew bottle (${{ matrix.artifact_name }})
+    needs: prepare
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-26
+            artifact_name: macos-arm64
+          - os: macos-15-intel
+            artifact_name: macos-intel
+          - os: ubuntu-latest
+            artifact_name: linux-x86_64
+    steps:
+      - name: Checkout Homebrew tap
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TAP_REPOSITORY }}
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
+          path: homebrew-tap
+
+      - name: Download rendered Homebrew formula
+        uses: actions/download-artifact@v4
+        with:
+          name: homebrew-formula
+          path: rendered-formula
+
+      - name: Install rendered formula into tap checkout
+        shell: bash
+        run: |
+          set -euo pipefail
           mkdir -p homebrew-tap/Formula
-          scripts/render-homebrew-formula.sh "$GITHUB_REF_NAME" "${{ steps.source.outputs.sha256 }}" > homebrew-tap/Formula/mojify.rb
+          cp rendered-formula/mojify.rb homebrew-tap/Formula/mojify.rb
           ruby -c homebrew-tap/Formula/mojify.rb
 
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@main
 
-      - name: Validate Homebrew formula
+      - name: Build and bottle formula
+        shell: bash
+        env:
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+          HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: "1"
+        run: |
+          set -euo pipefail
+          brew tap "$TAP_NAME" "$PWD/homebrew-tap"
+          brew audit --formula "$TAP_NAME/$FORMULA_NAME"
+          brew install --build-bottle "$TAP_NAME/$FORMULA_NAME"
+          brew test "$TAP_NAME/$FORMULA_NAME"
+          brew bottle --json --root-url "${{ needs.prepare.outputs.bottle_root_url }}" "$TAP_NAME/$FORMULA_NAME"
+          shopt -s nullglob
+          artifacts=( *.bottle.tar.gz *.bottle.json )
+          if (( ${#artifacts[@]} == 0 )); then
+            echo "brew bottle did not produce bottle artifacts" >&2
+            exit 1
+          fi
+          printf '%s\n' "${artifacts[@]}"
+
+      - name: Upload bottle artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bottle-${{ matrix.artifact_name }}
+          path: |
+            *.bottle.tar.gz
+            *.bottle.json
+          if-no-files-found: error
+
+  publish-tap:
+    name: Publish Homebrew tap bottles
+    needs:
+      - prepare
+      - bottle
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout Homebrew tap
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TAP_REPOSITORY }}
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
+          path: homebrew-tap
+
+      - name: Download rendered Homebrew formula
+        uses: actions/download-artifact@v4
+        with:
+          name: homebrew-formula
+          path: rendered-formula
+
+      - name: Download bottle artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bottle-*
+          path: bottle-artifacts
+          merge-multiple: true
+
+      - name: Install rendered formula into tap checkout
         shell: bash
         run: |
           set -euo pipefail
-          brew tap jassuwu/tap "$PWD/homebrew-tap"
-          tap_dir="$(brew --repository jassuwu/tap)"
-          mkdir -p "$tap_dir/Formula"
-          cp homebrew-tap/Formula/mojify.rb "$tap_dir/Formula/mojify.rb"
-          brew audit --formula jassuwu/tap/mojify
-          brew install --build-from-source jassuwu/tap/mojify
-          brew test jassuwu/tap/mojify
+          mkdir -p homebrew-tap/Formula
+          cp rendered-formula/mojify.rb homebrew-tap/Formula/mojify.rb
+          ruby -c homebrew-tap/Formula/mojify.rb
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Publish tap bottle release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          bottles=( bottle-artifacts/*.bottle.tar.gz )
+          if (( ${#bottles[@]} == 0 )); then
+            echo "No bottle tarballs downloaded" >&2
+            exit 1
+          fi
+          release="${{ needs.prepare.outputs.bottle_release }}"
+          if gh release view "$release" --repo "$TAP_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$release" "${bottles[@]}" \
+              --repo "$TAP_REPOSITORY" \
+              --clobber
+            gh release edit "$release" \
+              --repo "$TAP_REPOSITORY" \
+              --title "Mojify Homebrew bottles ${{ needs.prepare.outputs.version }}"
+          else
+            gh release create "$release" "${bottles[@]}" \
+              --repo "$TAP_REPOSITORY" \
+              --title "Mojify Homebrew bottles ${{ needs.prepare.outputs.version }}" \
+              --notes "Homebrew bottles for Mojify ${{ needs.prepare.outputs.version }}."
+          fi
+
+      - name: Merge bottle metadata into tap formula
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          json_files=( bottle-artifacts/*.bottle.json )
+          if (( ${#json_files[@]} == 0 )); then
+            echo "No bottle JSON files downloaded" >&2
+            exit 1
+          fi
+          cd homebrew-tap
+          brew tap "$TAP_NAME" "$PWD"
+          json_args=()
+          for json in "${json_files[@]}"; do
+            json_args+=( "../$json" )
+          done
+          brew bottle --merge --write --no-commit "${json_args[@]}"
+          ruby -c Formula/mojify.rb
+          brew audit --formula "$TAP_NAME/$FORMULA_NAME"
+          git diff -- Formula/mojify.rb
 
       - name: Push Homebrew tap update
         shell: bash
@@ -138,5 +300,5 @@ jobs:
             echo "Homebrew formula already up to date."
             exit 0
           fi
-          git commit -m "mojify ${GITHUB_REF_NAME#v}"
+          git commit -m "mojify ${{ needs.prepare.outputs.version }}"
           git push

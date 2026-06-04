@@ -100,6 +100,10 @@ _Avoid_: Repository prettiness, packaged distribution, release automation
 The roadmap phase that makes the proven Mojify CLI available through normal user install paths while preserving the existing `play`, `probe`, and `export` command surface.
 _Avoid_: Product utility expansion, plugin ecosystem, release polish
 
+**README header demo**:
+The checked-in animated proof asset near the top of the README. It is generated from an original Remotion source animation, transformed through Mojify output, and composed into a GitHub-friendly GIF with a reduced-motion poster.
+_Avoid_: Copyrighted sample footage, generic logo loop, required CI render
+
 **Binary release distribution**:
 An installable CLI distribution path where Mojify publishes prebuilt command-line binaries as GitHub Release tarballs.
 _Avoid_: Source-building Homebrew formula, desktop installer, full Linux distro packaging

@@ -3,6 +3,7 @@ set -euo pipefail
 
 export_dir="dist/qa/export"
 synthetic_source="dist/qa/low-motion-bars.mp4"
+still_source="dist/qa/still-source.png"
 synthetic_mp4="${export_dir}/low-motion-bars-export.mp4"
 synthetic_webm="${export_dir}/low-motion-bars-export.webm"
 synthetic_mov="${export_dir}/low-motion-bars-export.mov"
@@ -13,6 +14,11 @@ synthetic_jpg="${export_dir}/low-motion-bars-frame.jpg"
 synthetic_jpeg="${export_dir}/low-motion-bars-frame.jpeg"
 synthetic_txt="${export_dir}/low-motion-bars-frame.txt"
 synthetic_ansi="${export_dir}/low-motion-bars-frame.ansi"
+still_png="${export_dir}/still-source-output.png"
+still_jpg="${export_dir}/still-source-output.jpg"
+still_jpeg="${export_dir}/still-source-output.jpeg"
+still_txt="${export_dir}/still-source-output.txt"
+still_ansi="${export_dir}/still-source-output.ansi"
 
 require_nonempty_file() {
   local path="$1"
@@ -100,6 +106,11 @@ if [[ ! -f "${synthetic_source}" ]]; then
   exit 1
 fi
 
+if [[ ! -f "${still_source}" ]]; then
+  printf 'Missing %s. Run `bun run qa:clips` first.\n' "${still_source}" >&2
+  exit 1
+fi
+
 mkdir -p "${export_dir}"
 
 printf 'Exporting synthetic QA clip across representative formats...\n'
@@ -125,6 +136,19 @@ check_video_width "${synthetic_jpeg}" "320"
 require_nonempty_file "${synthetic_txt}"
 require_nonempty_file "${synthetic_ansi}"
 
+printf '\nExporting still-source QA image across single-frame formats...\n'
+./bin/mojify export --overwrite --width 320 "${still_source}" "${still_png}"
+./bin/mojify export --overwrite --width 320 "${still_source}" "${still_jpg}"
+./bin/mojify export --overwrite --width 320 "${still_source}" "${still_jpeg}"
+./bin/mojify export --overwrite --width 80 "${still_source}" "${still_txt}"
+./bin/mojify export --overwrite --width 80 "${still_source}" "${still_ansi}"
+
+check_video_width "${still_png}" "320"
+check_video_width "${still_jpg}" "320"
+check_video_width "${still_jpeg}" "320"
+require_nonempty_file "${still_txt}"
+require_nonempty_file "${still_ansi}"
+
 printf '\nChecking export validation failures...\n'
 expect_export_failure \
   "unsupported-webp" \
@@ -132,6 +156,15 @@ expect_export_failure \
 expect_export_failure \
   "duration-single-frame" \
   ./bin/mojify export --overwrite --width 320 --duration 1s "${synthetic_source}" "${export_dir}/duration-frame.png"
+expect_export_failure \
+  "still-source-at" \
+  ./bin/mojify export --overwrite --width 320 --at 0s "${still_source}" "${export_dir}/still-source-at.png"
+expect_export_failure \
+  "still-source-duration" \
+  ./bin/mojify export --overwrite --width 320 --duration 1s "${still_source}" "${export_dir}/still-source-duration.png"
+expect_export_failure \
+  "still-source-mp4" \
+  ./bin/mojify export --overwrite --width 320 "${still_source}" "${export_dir}/still-source-output.mp4"
 
 real_source=""
 while IFS= read -r -d '' candidate; do

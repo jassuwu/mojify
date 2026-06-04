@@ -13,8 +13,20 @@ The v1 product shape for Mojify: terminal playback is the primary use case, and 
 _Avoid_: General media converter, ASCII toolkit, recipe platform
 
 **Source media**:
-The media accepted as input by Mojify v1: either a local video file or a platform URL that Mojify resolves into a temporary local media file before processing.
+The media accepted as input by Mojify: a local time-based media file, a local still image, or a platform URL that Mojify resolves into a temporary local media file before processing.
 _Avoid_: Live stream, stdin stream, unresolved URL stream
+
+**Still source**:
+A local still image accepted as source media for probing and single-frame export workflows, but not for terminal playback.
+_Avoid_: Image playback, animated image source, direct HTTP image URL
+
+**Still source export**:
+A single-frame export workflow where a local still source renders to `.txt`, `.ansi`, `.png`, `.jpg`, or `.jpeg` output.
+_Avoid_: Still-to-video export, still-to-animation export, synthetic duration
+
+**Still source timestamp rejection**:
+The rule that `--at` and `--duration` do not apply to local still sources because still sources have no timeline.
+_Avoid_: Ignored timestamp flags, synthetic image timeline, frame-zero alias
 
 **Source**:
 The CLI argument name for source media accepted by `probe`, `play`, and `export`.

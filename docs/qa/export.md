@@ -1,6 +1,6 @@
 # Export QA
 
-Export QA uses generated clips for a repeatable smoke test across Mojify's curated output formats and ignored real clips under `dist/` for optional source-audio verification.
+Export QA uses generated clips and a generated still image for a repeatable smoke test across Mojify's curated output formats and ignored real clips under `dist/` for optional source-audio verification.
 
 Platform URL export is covered by the cross-command checklist in `docs/qa/platform-media-input.md`.
 
@@ -13,11 +13,17 @@ Platform URL export is covered by the cross-command checklist in `docs/qa/platfo
 - Still image: `.png`, `.jpg`, `.jpeg`
 - Single-frame text: `.txt`, `.ansi`
 
+Local still-image sources are supported for `.png`, `.jpg`, and `.jpeg` inputs. They are accepted by `mojify probe` and `mojify export`, but not by `mojify play`. Still sources have no timeline, so they export only to single-frame outputs: `.png`, `.jpg`, `.jpeg`, `.txt`, and `.ansi`.
+
+Direct HTTP image URLs, animated image sources, and WebP source images remain deferred.
+
 `.webp` is intentionally deferred. WebP is ambiguous in Mojify's extension-routed export contract because the same extension can represent a still image or an animated visual, and WebP encoding is not guaranteed by the current FFmpeg runtime dependency. Users who need WebP should export PNG, GIF, APNG, or MP4 and convert externally for now.
 
-`--at <timestamp>` is valid for every supported export format. Accepted timestamp examples include `10`, `10s`, `1:23`, and `01:02:03.250`.
+For timeline sources, `--at <timestamp>` is valid for every supported export format. Accepted timestamp examples include `10`, `10s`, `1:23`, and `01:02:03.250`.
 
 `--duration <duration>` is valid only for time-based exports: `.mp4`, `.webm`, `.mov`, `.gif`, and `.apng`. It is invalid for single-frame outputs: `.png`, `.jpg`, `.jpeg`, `.txt`, and `.ansi`.
+
+Still-image sources reject both `--at` and `--duration` because there is no source timeline to seek or trim.
 
 Text exports are single rendered Mojify character frames. `.txt` writes plain text, and `.ansi` writes a colored ANSI frame. For media and image outputs, `--width` means output pixels. For text outputs, `--width` means character columns.
 
@@ -41,11 +47,18 @@ Expected generated output:
 - `dist/qa/export/low-motion-bars-frame.jpeg`
 - `dist/qa/export/low-motion-bars-frame.txt`
 - `dist/qa/export/low-motion-bars-frame.ansi`
+- `dist/qa/export/still-source-output.png`
+- `dist/qa/export/still-source-output.jpg`
+- `dist/qa/export/still-source-output.txt`
+- `dist/qa/export/still-source-output.ansi`
 - `ffprobe` reports a video or image stream for the synthetic media/image exports.
 - The exported synthetic media/image streams have width `320`.
 - The exported synthetic text files are non-empty.
+- The exported still-source image streams have width `320`.
+- The exported still-source text files are non-empty.
 - Unsupported `.webp` output is rejected.
 - `--duration` is rejected for single-frame outputs.
+- Still-source export rejects `--at`, `--duration`, and time-based output such as `.mp4`.
 
 If a top-level `dist/` media file with an audio stream is present, `bun run qa:export` also writes:
 
@@ -81,6 +94,8 @@ mkdir -p dist/qa/export
 ./bin/mojify export --overwrite --width 320 --at 0s --duration 2s dist/qa/low-motion-bars.mp4 dist/qa/export/low-motion-bars-export.gif
 ./bin/mojify export --overwrite --width 320 --at 0s dist/qa/low-motion-bars.mp4 dist/qa/export/low-motion-bars-frame.png
 ./bin/mojify export --overwrite --width 80 --at 0s dist/qa/low-motion-bars.mp4 dist/qa/export/low-motion-bars-frame.ansi
+./bin/mojify export --overwrite --width 320 dist/qa/still-source.png dist/qa/export/still-source-output.png
+./bin/mojify export --overwrite --width 80 dist/qa/still-source.png dist/qa/export/still-source-output.ansi
 ffprobe -hide_banner -v error \
   -select_streams v:0 \
   -show_entries stream=codec_name,width,height,avg_frame_rate,duration \
@@ -130,19 +145,28 @@ The audio QA passes when each exported video file contains an audio stream. If t
 | `.jpeg` | `low-motion-bars-frame.jpeg` | `--at 0s` | image stream, width `320` |
 | `.txt` | `low-motion-bars-frame.txt` | `--at 0s --width 80` | non-empty text |
 | `.ansi` | `low-motion-bars-frame.ansi` | `--at 0s --width 80` | non-empty ANSI text |
+| `.png` from still source | `still-source-output.png` | no timestamp flags | image stream, width `320` |
+| `.jpg` from still source | `still-source-output.jpg` | no timestamp flags | image stream, width `320` |
+| `.txt` from still source | `still-source-output.txt` | `--width 80` only | non-empty text |
+| `.ansi` from still source | `still-source-output.ansi` | `--width 80` only | non-empty ANSI text |
 | `.mp4`, `.webm`, `.mov` | `real-sample-export.<ext>` | `--duration 2s` with optional real sample | audio stream present |
 
 ## Checklist
 
 - Synthetic export completes without prompting because `--overwrite` is set.
 - Synthetic export writes the representative matrix outputs.
+- Still-source export writes representative single-frame image and text outputs.
 - `ffprobe` finds video/image stream `v:0` for media and image outputs.
 - The exported media/image width is `320`.
 - Text outputs are non-empty single-frame exports.
-- `--at` works for video, animated, still image, and still text outputs.
+- `--at` works for video, animated, still image, and still text outputs from timeline sources.
 - `--duration` works for video and animated outputs.
 - `--duration` is rejected for still image outputs in automated QA and for all still image/text outputs by parser tests.
+- Still-source export rejects `--at` and `--duration`.
+- Still-source export rejects time-based outputs such as `.mp4`.
+- Local `.png`, `.jpg`, and `.jpeg` still-image sources are accepted by `probe` and `export`, not by `play`.
 - `.webp` remains unsupported in this stage.
+- Direct HTTP image URLs and animated image sources remain deferred.
 - Optional real-sample export writes `dist/qa/export/real-sample-export.mp4`, `.webm`, and `.mov`.
 - Optional real-sample export preserves source audio when the source has audio.
 - Known-total export progress reaches `100%` before format finalization.

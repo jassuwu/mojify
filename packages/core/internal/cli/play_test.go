@@ -94,6 +94,24 @@ func TestRunPlayRejectsMissingYTDLPForPlatformURL(t *testing.T) {
 	}
 }
 
+func TestRunPlayRejectsStillSourceBeforeProbe(t *testing.T) {
+	var probeCalled bool
+
+	err := runPlayWithOptions(context.Background(), "poster.png", os.Stdin, io.Discard, io.Discard, PlayOptions{}, playRunnerOptions{
+		YTDLPPath: "missing-yt-dlp-for-local-test",
+		Probe: func(ctx context.Context, path string) (media.Info, error) {
+			probeCalled = true
+			return media.Info{}, errors.New("probe should not be called")
+		},
+	})
+	if err == nil || err.Error() != "still image sources cannot be played; use mojify export <source> <output> instead" {
+		t.Fatalf("error = %v, want still image play rejection", err)
+	}
+	if probeCalled {
+		t.Fatal("probe was called for still source")
+	}
+}
+
 func TestRunPlayResolvesPlatformURLBeforeProbeAndCleansUp(t *testing.T) {
 	tempPath := filepath.Join(t.TempDir(), "source-temp.txt")
 	fake := writeFakeYTDLP(t, fakeYTDLPOptions{TempPath: tempPath})

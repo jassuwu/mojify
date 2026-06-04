@@ -44,6 +44,9 @@ func runPlayWithOptions(ctx context.Context, inputPath string, stdin *os.File, s
 		return err
 	}
 	defer resolved.Cleanup()
+	if resolved.Kind == sourceKindStill {
+		return fmt.Errorf("still image sources cannot be played; use mojify export <source> <output> instead")
+	}
 	inputPath = resolved.Path
 
 	probe := runnerOptions.Probe

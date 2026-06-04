@@ -35,6 +35,94 @@ func TestResolveSourceMediaLocalBypassesYTDLP(t *testing.T) {
 	}
 }
 
+func TestResolveSourceMediaClassifiesLocalStillSources(t *testing.T) {
+	staticPNGPath := filepath.Join(t.TempDir(), "static.png")
+	staticPNG := []byte{
+		0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n',
+		0, 0, 0, 0, 'I', 'E', 'N', 'D', 0, 0, 0, 0,
+	}
+	if err := os.WriteFile(staticPNGPath, staticPNG, 0o644); err != nil {
+		t.Fatalf("write static PNG fixture: %v", err)
+	}
+	for _, source := range []string{
+		staticPNGPath,
+		"image.png",
+		"image.jpg",
+		"image.jpeg",
+		"IMAGE.PNG",
+		"IMAGE.JPG",
+		"IMAGE.JPEG",
+	} {
+		resolved, err := resolveSourceMediaWithOptions(context.Background(), source, sourceResolverOptions{
+			YTDLPPath: "missing-yt-dlp-for-local-test",
+		})
+		if err != nil {
+			t.Fatalf("resolveSourceMediaWithOptions(%q) returned error: %v", source, err)
+		}
+		defer resolved.Cleanup()
+		if resolved.Kind != sourceKindStill {
+			t.Fatalf("Kind for %q = %s, want %s", source, resolved.Kind, sourceKindStill)
+		}
+	}
+}
+
+func TestResolveSourceMediaClassifiesLocalNonStillSourcesAsTimeBased(t *testing.T) {
+	for _, source := range []string{
+		"clip.mp4",
+		"clip.mov",
+		"clip",
+	} {
+		resolved, err := resolveSourceMediaWithOptions(context.Background(), source, sourceResolverOptions{
+			YTDLPPath: "missing-yt-dlp-for-local-test",
+		})
+		if err != nil {
+			t.Fatalf("resolveSourceMediaWithOptions(%q) returned error: %v", source, err)
+		}
+		defer resolved.Cleanup()
+		if resolved.Kind != sourceKindTimeBased {
+			t.Fatalf("Kind for %q = %s, want %s", source, resolved.Kind, sourceKindTimeBased)
+		}
+	}
+}
+
+func TestResolveSourceMediaRejectsDeferredImageSources(t *testing.T) {
+	for _, tc := range []struct {
+		source string
+		want   string
+	}{
+		{"clip.gif", "animated image sources are not supported"},
+		{"clip.apng", "animated image sources are not supported"},
+		{"clip.webp", "webp source images are not supported"},
+	} {
+		t.Run(tc.source, func(t *testing.T) {
+			_, err := resolveSourceMediaWithOptions(context.Background(), tc.source, sourceResolverOptions{
+				YTDLPPath: "missing-yt-dlp-for-local-test",
+			})
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %v, want %q", err, tc.want)
+			}
+		})
+	}
+}
+
+func TestResolveSourceMediaRejectsAPNGContentWithPNGExtension(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "animated.png")
+	data := []byte{
+		0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n',
+		0, 0, 0, 0, 'a', 'c', 'T', 'L', 0, 0, 0, 0,
+	}
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		t.Fatalf("write APNG marker fixture: %v", err)
+	}
+
+	_, err := resolveSourceMediaWithOptions(context.Background(), path, sourceResolverOptions{
+		YTDLPPath: "missing-yt-dlp-for-local-test",
+	})
+	if err == nil || !strings.Contains(err.Error(), "animated image sources are not supported") {
+		t.Fatalf("error = %v, want animated image rejection", err)
+	}
+}
+
 func TestResolveSourceMediaDownloadsHTTPSSource(t *testing.T) {
 	fake := writeFakeYTDLP(t, fakeYTDLPOptions{})
 	var stderr bytes.Buffer
@@ -54,6 +142,9 @@ func TestResolveSourceMediaDownloadsHTTPSSource(t *testing.T) {
 	}
 	if resolved.DisplayName != "Demo_Title [abc123].mp4" {
 		t.Fatalf("DisplayName = %q, want final basename", resolved.DisplayName)
+	}
+	if resolved.Kind != sourceKindTimeBased {
+		t.Fatalf("Kind = %s, want %s", resolved.Kind, sourceKindTimeBased)
 	}
 	if _, err := os.Stat(downloadedPath); err != nil {
 		t.Fatalf("downloaded path does not exist before cleanup: %v", err)

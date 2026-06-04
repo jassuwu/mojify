@@ -76,7 +76,8 @@ Usage:
   mojify --help                                         Show this help
 
 Source:
-  <source> may be a local video file or an HTTP(S) platform URL.
+  <source> may be a local video file, local still image, or an HTTP(S) platform URL.
+  Still image sources can be probed and exported, but not played.
 
 Export output formats:
   .mp4, .webm, .mov, .gif, .apng, .png, .jpg, .jpeg, .txt, .ansi
@@ -104,7 +105,7 @@ Requirements:
 
 func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 	if len(args) < 2 {
-		return Command{}, fmt.Errorf("%s requires a video input", args[0])
+		return Command{}, fmt.Errorf("%s requires a source input", args[0])
 	}
 
 	var inputPath string
@@ -130,16 +131,16 @@ func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 			noAudio = true
 		default:
 			if inputPath != "" {
-				return Command{}, fmt.Errorf("%s accepts exactly one video input", args[0])
+				return Command{}, fmt.Errorf("%s accepts exactly one source input", args[0])
 			}
 			inputPath = arg
 		}
 	}
 	if inputPath == "" {
-		return Command{}, fmt.Errorf("%s requires a video input", args[0])
+		return Command{}, fmt.Errorf("%s requires a source input", args[0])
 	}
 	if hasUnsupportedSourceProtocol(inputPath) {
-		return Command{}, fmt.Errorf("%s accepts local video file paths or HTTP(S) platform URLs only", args[0])
+		return Command{}, fmt.Errorf("%s accepts local source paths or HTTP(S) platform URLs only", args[0])
 	}
 	return Command{Kind: kind, InputPath: inputPath, Stats: stats, NoAudio: noAudio}, nil
 }
@@ -233,17 +234,17 @@ func parseExportCommand(args []string) (Command, error) {
 				return Command{}, fmt.Errorf("unknown export option %q", arg)
 			}
 			if len(paths) == 2 {
-				return Command{}, fmt.Errorf("export accepts exactly one input and one output")
+				return Command{}, fmt.Errorf("export accepts exactly one source input and one output")
 			}
 			paths = append(paths, arg)
 		}
 	}
 
 	if len(paths) != 2 {
-		return Command{}, fmt.Errorf("export requires an input media path and output path")
+		return Command{}, fmt.Errorf("export requires a source input and output path")
 	}
 	if hasUnsupportedSourceProtocol(paths[0]) {
-		return Command{}, fmt.Errorf("export accepts local video file paths or HTTP(S) platform URLs only")
+		return Command{}, fmt.Errorf("export accepts local source paths or HTTP(S) platform URLs only")
 	}
 	if hasProtocolInput(paths[1]) {
 		return Command{}, fmt.Errorf("export accepts local output file paths only")

@@ -9,7 +9,7 @@ This document is public-safe. It names repositories, GitHub Actions secret names
 - Homebrew: `brew install jassuwu/tap/mojify`
 - GitHub Release tarballs from `jassuwu/mojify`
 
-Homebrew uses a source-building formula. GitHub Releases provide prebuilt macOS and Linux tarballs plus checksums.
+Homebrew uses a source-building formula with Homebrew bottles for supported hosts. GitHub Releases in `jassuwu/mojify` provide prebuilt macOS and Linux tarballs plus checksums for non-Homebrew installs.
 
 Not supported in this stage:
 
@@ -103,8 +103,10 @@ The tag workflow publishes:
 - `checksums.txt`
 - generated GitHub Release notes
 - source-building Homebrew formula in `jassuwu/homebrew-tap`
+- Homebrew bottle artifacts in `jassuwu/homebrew-tap` GitHub Releases
+- formula `bottle do` metadata for supported hosts
 
-The workflow publishes the GitHub Release first, then renders, audits, source-installs, tests, and pushes the Homebrew formula. If the tap update fails after the GitHub Release succeeds, do not delete the release automatically. Fix the tap/token problem and rerun the workflow when possible; release publishing is idempotent and re-uploads assets with `--clobber` when the release already exists. If rerun is not available, manually render and commit `Formula/mojify.rb` with `scripts/render-homebrew-formula.sh`.
+The workflow publishes the source-repo GitHub Release first, then renders the source formula, builds and tests Homebrew bottles on native runners, uploads bottle artifacts to `jassuwu/homebrew-tap` GitHub Releases, merges bottle metadata into the tap formula, audits it, and pushes the tap update. If the tap update fails after the GitHub Release succeeds, do not delete the release automatically. Fix the tap/token problem and rerun the workflow when possible; release publishing is idempotent and re-uploads assets with `--clobber` when the release already exists. If rerun is not available, manually render and commit `Formula/mojify.rb` with `scripts/render-homebrew-formula.sh`.
 
 ## Release Smoke Test
 
@@ -112,10 +114,13 @@ After the workflow passes, test Homebrew installation:
 
 ```bash
 brew update
-brew install jassuwu/tap/mojify
+brew reinstall jassuwu/tap/mojify
+brew info jassuwu/tap/mojify
 mojify --version
 bun run qa:clips
 mojify probe ./dist/qa/low-motion-bars.mp4
+brew reinstall --build-from-source jassuwu/tap/mojify
+mojify --version
 ```
 
 Expected version shape:
@@ -136,6 +141,8 @@ Homebrew installs declare:
 
 - `ffmpeg`
 - `yt-dlp`
+
+Homebrew bottle installs do not require end users to install Go. Source fallback and bottle generation still use Go as the formula's build dependency.
 
 Tarball users must install:
 

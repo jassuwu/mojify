@@ -27,7 +27,7 @@
 - `docs/adr/0028-add-homebrew-bottles-with-source-fallback.md`: create the architectural decision record for true bottles plus source fallback.
 - `docs/release.md`: update the public runbook to document bottle publishing, tap bottle release assets, source fallback, and bottle smoke tests.
 - `README.md`: update the Homebrew install sentence so it no longer says Homebrew always builds Mojify from source.
-- `scripts/render-homebrew-formula.sh`: leave unchanged; the workflow continues to render the source formula before bottle metadata is merged.
+- `scripts/render-homebrew-formula.sh`: add explicit formula version metadata so calendar build tags do not depend on Homebrew URL version inference.
 - `jassuwu/homebrew-tap/Formula/mojify.rb`: generated and pushed by the release workflow; do not edit it manually in this source repo plan.
 
 ## Task 1: Record the Bottle Distribution Decision
@@ -267,19 +267,24 @@ jobs:
           brew test "$TAP_NAME/$FORMULA_NAME"
           brew bottle --json --root-url "${{ needs.prepare.outputs.bottle_root_url }}" "$TAP_NAME/$FORMULA_NAME"
           shopt -s nullglob
-          artifacts=( *.bottle.tar.gz *.bottle.json )
-          if (( ${#artifacts[@]} == 0 )); then
-            echo "brew bottle did not produce bottle artifacts" >&2
+          bottle_tarballs=( *.bottle*.tar.gz )
+          bottle_json=( *.bottle.json )
+          if (( ${#bottle_tarballs[@]} == 0 )); then
+            echo "brew bottle did not produce bottle tarballs" >&2
             exit 1
           fi
-          printf '%s\n' "${artifacts[@]}"
+          if (( ${#bottle_json[@]} == 0 )); then
+            echo "brew bottle did not produce bottle JSON metadata" >&2
+            exit 1
+          fi
+          printf '%s\n' "${bottle_tarballs[@]}" "${bottle_json[@]}"
 
       - name: Upload bottle artifacts
         uses: actions/upload-artifact@v4
         with:
           name: bottle-${{ matrix.artifact_name }}
           path: |
-            *.bottle.tar.gz
+            *.bottle*.tar.gz
             *.bottle.json
           if-no-files-found: error
 
@@ -329,7 +334,7 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          bottles=( bottle-artifacts/*.bottle.tar.gz )
+          bottles=( bottle-artifacts/*.bottle*.tar.gz )
           if (( ${#bottles[@]} == 0 )); then
             echo "No bottle tarballs downloaded" >&2
             exit 1

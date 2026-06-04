@@ -185,19 +185,24 @@ jobs:
           brew test "$TAP_NAME/$FORMULA_NAME"
           brew bottle --json --root-url "${{ needs.prepare.outputs.bottle_root_url }}" "$TAP_NAME/$FORMULA_NAME"
           shopt -s nullglob
-          artifacts=( *.bottle.tar.gz *.bottle.json )
-          if (( ${#artifacts[@]} == 0 )); then
-            echo "brew bottle did not produce bottle artifacts" >&2
+          bottle_tarballs=( *.bottle*.tar.gz )
+          bottle_json=( *.bottle.json )
+          if (( ${#bottle_tarballs[@]} == 0 )); then
+            echo "brew bottle did not produce bottle tarballs" >&2
             exit 1
           fi
-          printf '%s\n' "${artifacts[@]}"
+          if (( ${#bottle_json[@]} == 0 )); then
+            echo "brew bottle did not produce bottle JSON metadata" >&2
+            exit 1
+          fi
+          printf '%s\n' "${bottle_tarballs[@]}" "${bottle_json[@]}"
 
       - name: Upload bottle artifacts
         uses: actions/upload-artifact@v4
         with:
           name: bottle-${{ matrix.artifact_name }}
           path: |
-            *.bottle.tar.gz
+            *.bottle*.tar.gz
             *.bottle.json
           if-no-files-found: error
 
@@ -247,7 +252,7 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          bottles=( bottle-artifacts/*.bottle.tar.gz )
+          bottles=( bottle-artifacts/*.bottle*.tar.gz )
           if (( ${#bottles[@]} == 0 )); then
             echo "No bottle tarballs downloaded" >&2
             exit 1

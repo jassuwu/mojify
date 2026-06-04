@@ -12,6 +12,7 @@ fi
 
 tag="$1"
 sha256="$2"
+version="${tag#v}"
 
 if [[ ! "$tag" =~ ^v[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]+$ ]]; then
   echo "invalid Mojify release tag: $tag" >&2
@@ -29,6 +30,7 @@ class Mojify < Formula
   desc "Terminal-first video player that renders media as colored character frames"
   homepage "https://github.com/jassuwu/mojify"
   url "https://github.com/jassuwu/mojify/archive/refs/tags/${tag}.tar.gz"
+  version "${version}"
   sha256 "${sha256}"
   license "MIT"
 

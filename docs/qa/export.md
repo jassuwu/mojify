@@ -13,7 +13,7 @@ Platform URL export is covered by the cross-command checklist in `docs/qa/platfo
 - Still image: `.png`, `.jpg`, `.jpeg`
 - Single-frame text: `.txt`, `.ansi`
 
-`.webp` is intentionally deferred in this stage.
+`.webp` is intentionally deferred. WebP is ambiguous in Mojify's extension-routed export contract because the same extension can represent a still image or an animated visual, and WebP encoding is not guaranteed by the current FFmpeg runtime dependency. Users who need WebP should export PNG, GIF, APNG, or MP4 and convert externally for now.
 
 `--at <timestamp>` is valid for every supported export format. Accepted timestamp examples include `10`, `10s`, `1:23`, and `01:02:03.250`.
 

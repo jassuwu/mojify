@@ -65,8 +65,8 @@ Single-frame `.txt` or `.ansi` output generated from a rendered Mojify character
 _Avoid_: Animated text export, terminal recording
 
 **WebP deferral**:
-The explicit decision to leave `.webp` out of the curated export set for this stage until its static and animated behavior can be specified and tested.
-_Avoid_: Accidental WebP support, arbitrary image conversion
+The explicit decision to leave `.webp` out of the curated export set while WebP remains both semantically ambiguous for Mojify's extension-routed export contract (still image vs animated visual) and not guaranteed by the current FFmpeg runtime dependency. Users who need WebP should export PNG, GIF, APNG, or MP4 and convert externally for now.
+_Avoid_: Accidental WebP support, arbitrary image conversion, assuming FFmpeg can encode WebP
 
 **Export progress**:
 User-facing export status on stderr that reports rendered frame progress against the export frame count when the total is knowable, and an indeterminate rendered-frame count when it is not. `100%` means Mojify has rendered and written all visual frames to the active output encoder or serializer, after which the status should move to format finalization when applicable; export progress should be terminal-friendly when interactive, log-friendly otherwise, and should not claim an ETA or time remaining by default.

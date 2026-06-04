@@ -107,12 +107,13 @@ Homebrew installs declare `ffmpeg` and `yt-dlp`. Tarball installs require the ru
 
 Planned or likely follow-up work:
 
-- WebP export
 - custom renderer recipes
 - npm/npx wrapper around the native binary
 - native Windows support beyond WSL
 - a desktop app?
 - a landing site?
+
+WebP export remains deferred: `.webp` can mean either still or animated output, and WebP encoding is not guaranteed by Mojify's current FFmpeg dependency. Export PNG, GIF, APNG, or MP4 and convert externally when WebP is needed.
 
 ## Development
 

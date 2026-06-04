@@ -169,6 +169,20 @@ jobs:
           cp rendered-formula/mojify.rb homebrew-tap/Formula/mojify.rb
           ruby -c homebrew-tap/Formula/mojify.rb
 
+      - name: Stage rendered formula for Homebrew tap
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/mojify.rb
+          if git diff --cached --quiet; then
+            git commit --allow-empty -m "mojify ${{ needs.prepare.outputs.version }} formula staging"
+          else
+            git commit -m "mojify ${{ needs.prepare.outputs.version }} formula staging"
+          fi
+
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@main
 
@@ -242,6 +256,20 @@ jobs:
           cp rendered-formula/mojify.rb homebrew-tap/Formula/mojify.rb
           ruby -c homebrew-tap/Formula/mojify.rb
 
+      - name: Stage rendered formula for Homebrew tap
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/mojify.rb
+          if git diff --cached --quiet; then
+            git commit --allow-empty -m "mojify ${{ needs.prepare.outputs.version }} formula staging"
+          else
+            git commit -m "mojify ${{ needs.prepare.outputs.version }} formula staging"
+          fi
+
       - name: Set up Homebrew
         uses: Homebrew/actions/setup-homebrew@main
 
@@ -289,6 +317,8 @@ jobs:
             json_args+=( "../$json" )
           done
           brew bottle --merge --write --no-commit "${json_args[@]}"
+          tap_formula="$(brew --repository "$TAP_NAME")/Formula/${FORMULA_NAME}.rb"
+          cp "$tap_formula" "Formula/${FORMULA_NAME}.rb"
           ruby -c Formula/mojify.rb
           brew audit --formula "$TAP_NAME/$FORMULA_NAME"
           git diff -- Formula/mojify.rb
@@ -302,8 +332,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Formula/mojify.rb
           if git diff --cached --quiet; then
-            echo "Homebrew formula already up to date."
-            exit 0
+            echo "Merged Homebrew bottle metadata did not change Formula/mojify.rb" >&2
+            exit 1
           fi
-          git commit -m "mojify ${{ needs.prepare.outputs.version }}"
+          git commit --amend -m "mojify ${{ needs.prepare.outputs.version }}"
           git push

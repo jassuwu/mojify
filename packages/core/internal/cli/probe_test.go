@@ -70,6 +70,43 @@ func TestPrintProbeInfoForResolvedPlatformSource(t *testing.T) {
 	}
 }
 
+func TestPrintProbeInfoForStillSource(t *testing.T) {
+	var out bytes.Buffer
+	printProbeInfo(&out, probeOutput{
+		OriginalSource:  "poster.png",
+		SourceKind:      sourceKindStill,
+		Width:           800,
+		Height:          600,
+		FPS:             30,
+		FrameCount:      90,
+		DurationSeconds: 3,
+		HasAudio:        false,
+		RenderCols:      107,
+		RenderRows:      40,
+	})
+	got := out.String()
+	for _, want := range []string{
+		"input: poster.png\n",
+		"image: 800x600\n",
+		"audio: no\n",
+		"render-grid: 107x40 (sample terminal 120x40)\n",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("probe output missing %q in:\n%s", want, got)
+		}
+	}
+	for _, unwanted := range []string{
+		"video:",
+		"fps:",
+		"frames:",
+		"duration:",
+	} {
+		if strings.Contains(got, unwanted) {
+			t.Fatalf("still probe output included %q in:\n%s", unwanted, got)
+		}
+	}
+}
+
 func TestRunProbeResolvesPlatformSource(t *testing.T) {
 	fakeYTDLPPath := writeProbeFakeYTDLP(t)
 	var stdout bytes.Buffer
@@ -102,6 +139,51 @@ func TestRunProbeResolvesPlatformSource(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "resolved-source: Demo_Title [abc123].mp4\n") {
 		t.Fatalf("stdout missing resolved source: %q", stdout.String())
+	}
+}
+
+func TestRunProbePrintsStillSourceOutput(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	err := runProbeWithOptions(context.Background(), "poster.png", &stdout, &stderr, probeRunnerOptions{
+		YTDLPPath: "missing-yt-dlp-for-local-test",
+		Probe: func(ctx context.Context, path string) (media.Info, error) {
+			if path != "poster.png" {
+				t.Fatalf("probe path = %q, want local still source", path)
+			}
+			return media.Info{
+				Width:  800,
+				Height: 600,
+			}, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("runProbeWithOptions returned error: %v", err)
+	}
+	got := stdout.String()
+	for _, want := range []string{
+		"input: poster.png\n",
+		"image: 800x600\n",
+		"audio: no\n",
+		"render-grid: 106x40 (sample terminal 120x40)\n",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stdout missing %q in:\n%s", want, got)
+		}
+	}
+	for _, unwanted := range []string{
+		"video:",
+		"fps:",
+		"frames:",
+		"duration:",
+	} {
+		if strings.Contains(got, unwanted) {
+			t.Fatalf("still run probe output included %q in:\n%s", unwanted, got)
+		}
+	}
+	if stderr.String() != "" {
+		t.Fatalf("stderr = %q, want no local source status", stderr.String())
 	}
 }
 

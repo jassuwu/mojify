@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 
@@ -43,11 +44,35 @@ func runExportWithOptions(ctx context.Context, inputPath string, outputPath stri
 	}
 	defer resolved.Cleanup()
 
+	if err := validateStillSourceExport(resolved, outputPath, options); err != nil {
+		return err
+	}
+
 	exportFn := runnerOptions.Export
 	if exportFn == nil {
 		exportFn = exporter.Export
 	}
 	return exportFn(ctx, resolved.Path, outputPath, stderr, exportOptions)
+}
+
+func validateStillSourceExport(resolved resolvedSourceMedia, outputPath string, options ExportOptions) error {
+	if resolved.Kind != sourceKindStill {
+		return nil
+	}
+	if options.HasAt {
+		return fmt.Errorf("export --at is not valid for still image sources")
+	}
+	if options.HasDuration {
+		return fmt.Errorf("export --duration is not valid for still image sources")
+	}
+	format, err := exporter.ResolveOutputFormat(outputPath)
+	if err != nil {
+		return err
+	}
+	if !format.SingleFrame {
+		return fmt.Errorf("still image sources can only export single-frame outputs: .png, .jpg, .jpeg, .txt, .ansi")
+	}
+	return nil
 }
 
 func isTerminalWriter(writer io.Writer) bool {

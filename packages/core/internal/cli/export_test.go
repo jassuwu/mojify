@@ -132,3 +132,84 @@ func TestRunExportPassesTimeOptionsAndUsesGeneralExporter(t *testing.T) {
 		t.Fatalf("Duration = (%v, %v), want (true, 3)", gotOptions.HasDuration, gotOptions.DurationSeconds)
 	}
 }
+
+func TestRunExportAllowsStillSourceToSingleFrameOutput(t *testing.T) {
+	exportErr := errors.New("stop after export handoff")
+	source := "poster.png"
+	var gotInputPath string
+	var gotInputLabel string
+
+	err := runExportWithOptions(context.Background(), source, "out.txt", io.Discard, ExportOptions{}, exportRunnerOptions{
+		Export: func(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options exporter.Options) error {
+			gotInputPath = inputPath
+			gotInputLabel = options.InputLabel
+			return exportErr
+		},
+	})
+	if !errors.Is(err, exportErr) {
+		t.Fatalf("error = %v, want export sentinel", err)
+	}
+	if gotInputPath != source {
+		t.Fatalf("export input path = %q, want original local path", gotInputPath)
+	}
+	if gotInputLabel != source {
+		t.Fatalf("InputLabel = %q, want original local path", gotInputLabel)
+	}
+}
+
+func TestRunExportRejectsTimeBasedOutputForStillSource(t *testing.T) {
+	calledExport := false
+
+	err := runExportWithOptions(context.Background(), "poster.jpg", "out.gif", io.Discard, ExportOptions{}, exportRunnerOptions{
+		Export: func(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options exporter.Options) error {
+			calledExport = true
+			return nil
+		},
+	})
+	if err == nil || err.Error() != "still image sources can only export single-frame outputs: .png, .jpg, .jpeg, .txt, .ansi" {
+		t.Fatalf("error = %v, want still-source output validation error", err)
+	}
+	if calledExport {
+		t.Fatal("export function was called for invalid still-source output")
+	}
+}
+
+func TestRunExportRejectsAtForStillSource(t *testing.T) {
+	calledExport := false
+
+	err := runExportWithOptions(context.Background(), "poster.jpeg", "out.png", io.Discard, ExportOptions{
+		HasAt:     true,
+		AtSeconds: 1,
+	}, exportRunnerOptions{
+		Export: func(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options exporter.Options) error {
+			calledExport = true
+			return nil
+		},
+	})
+	if err == nil || err.Error() != "export --at is not valid for still image sources" {
+		t.Fatalf("error = %v, want still-source --at validation error", err)
+	}
+	if calledExport {
+		t.Fatal("export function was called with --at for still source")
+	}
+}
+
+func TestRunExportRejectsDurationForStillSource(t *testing.T) {
+	calledExport := false
+
+	err := runExportWithOptions(context.Background(), "poster.png", "out.png", io.Discard, ExportOptions{
+		HasDuration:     true,
+		DurationSeconds: 1,
+	}, exportRunnerOptions{
+		Export: func(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options exporter.Options) error {
+			calledExport = true
+			return nil
+		},
+	})
+	if err == nil || err.Error() != "export --duration is not valid for still image sources" {
+		t.Fatalf("error = %v, want still-source --duration validation error", err)
+	}
+	if calledExport {
+		t.Fatal("export function was called with --duration for still source")
+	}
+}

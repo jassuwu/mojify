@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,10 +22,27 @@ const (
 	sourceTempDirectoryPrefix = "mojify-source-"
 )
 
+type sourceKind int
+
+const (
+	sourceKindTimeBased sourceKind = iota
+	sourceKindStill
+)
+
+func (kind sourceKind) String() string {
+	switch kind {
+	case sourceKindStill:
+		return "still"
+	default:
+		return "time-based"
+	}
+}
+
 type resolvedSourceMedia struct {
 	Original    string
 	Path        string
 	DisplayName string
+	Kind        sourceKind
 	Temporary   bool
 	Cleanup     func() error
 }
@@ -47,10 +65,15 @@ func resolveSourceMedia(ctx context.Context, source string, stderr io.Writer) (r
 
 func resolveSourceMediaWithOptions(ctx context.Context, source string, options sourceResolverOptions) (resolvedSourceMedia, error) {
 	if !isHTTPPlatformSource(source) {
+		kind, err := classifyLocalSourceKind(source)
+		if err != nil {
+			return resolvedSourceMedia{}, err
+		}
 		return resolvedSourceMedia{
 			Original:    source,
 			Path:        source,
 			DisplayName: filepath.Base(source),
+			Kind:        kind,
 			Cleanup:     func() error { return nil },
 		}, nil
 	}
@@ -103,9 +126,58 @@ func resolveSourceMediaWithOptions(ctx context.Context, source string, options s
 		Original:    source,
 		Path:        finalPath,
 		DisplayName: displayName,
+		Kind:        sourceKindTimeBased,
 		Temporary:   true,
 		Cleanup:     cleanup,
 	}, nil
+}
+
+func classifyLocalSourceKind(source string) (sourceKind, error) {
+	switch strings.ToLower(filepath.Ext(source)) {
+	case ".png":
+		animated, err := isAPNGSourcePath(source)
+		if err != nil {
+			return sourceKindTimeBased, err
+		}
+		if animated {
+			return sourceKindTimeBased, fmt.Errorf("animated image sources are not supported")
+		}
+		return sourceKindStill, nil
+	case ".jpg", ".jpeg":
+		return sourceKindStill, nil
+	case ".gif", ".apng":
+		return sourceKindTimeBased, fmt.Errorf("animated image sources are not supported")
+	case ".webp":
+		return sourceKindTimeBased, fmt.Errorf("webp source images are not supported")
+	default:
+		return sourceKindTimeBased, nil
+	}
+}
+
+func isAPNGSourcePath(source string) (bool, error) {
+	data, err := os.ReadFile(source)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("inspect png source: %w", err)
+	}
+	if !bytes.HasPrefix(data, []byte("\x89PNG\r\n\x1a\n")) {
+		return false, nil
+	}
+	offset := 8
+	for offset+12 <= len(data) {
+		chunkLength := int(binary.BigEndian.Uint32(data[offset : offset+4]))
+		if chunkLength < 0 || offset+12+chunkLength > len(data) {
+			return false, nil
+		}
+		chunkType := string(data[offset+4 : offset+8])
+		if chunkType == "acTL" {
+			return true, nil
+		}
+		offset += 12 + chunkLength
+	}
+	return false, nil
 }
 
 func preflightPlatformSource(ctx context.Context, ytdlpPath string, source string) error {

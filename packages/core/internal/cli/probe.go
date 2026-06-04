@@ -12,6 +12,7 @@ import (
 type probeOutput struct {
 	OriginalSource      string
 	ResolvedDisplayName string
+	SourceKind          sourceKind
 	Width               int
 	Height              int
 	FPS                 float64
@@ -57,6 +58,7 @@ func runProbeWithOptions(ctx context.Context, source string, stdout io.Writer, s
 	printProbeInfo(stdout, probeOutput{
 		OriginalSource:      resolved.Original,
 		ResolvedDisplayName: resolvedDisplayName(resolved),
+		SourceKind:          resolved.Kind,
 		Width:               info.Width,
 		Height:              info.Height,
 		FPS:                 info.FPS,
@@ -84,10 +86,14 @@ func printProbeInfo(w io.Writer, output probeOutput) {
 	if output.ResolvedDisplayName != "" {
 		fmt.Fprintf(w, "resolved-source: %s\n", output.ResolvedDisplayName)
 	}
-	fmt.Fprintf(w, "video: %dx%d\n", output.Width, output.Height)
-	fmt.Fprintf(w, "fps: %.3f\n", output.FPS)
-	fmt.Fprintf(w, "frames: %d\n", output.FrameCount)
-	fmt.Fprintf(w, "duration: %.3fs\n", output.DurationSeconds)
+	if output.SourceKind == sourceKindStill {
+		fmt.Fprintf(w, "image: %dx%d\n", output.Width, output.Height)
+	} else {
+		fmt.Fprintf(w, "video: %dx%d\n", output.Width, output.Height)
+		fmt.Fprintf(w, "fps: %.3f\n", output.FPS)
+		fmt.Fprintf(w, "frames: %d\n", output.FrameCount)
+		fmt.Fprintf(w, "duration: %.3fs\n", output.DurationSeconds)
+	}
 	if output.HasAudio {
 		fmt.Fprintln(w, "audio: yes")
 	} else {

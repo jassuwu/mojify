@@ -57,6 +57,13 @@ mojify export --overwrite --width 320 --at 10s ./demo.mp4 ./dist/demo-frame.png
 mojify export --overwrite --width 80 --at 10s ./demo.mp4 ./dist/demo-frame.ansi
 ```
 
+Export a local still image as Mojify image or text output:
+
+```bash
+mojify export --overwrite --width 320 ./poster.png ./dist/poster-mojify.png
+mojify export --overwrite --width 80 ./poster.png ./dist/poster-mojify.ansi
+```
+
 Inspect what Mojify will derive from a source:
 
 ```bash
@@ -65,11 +72,12 @@ mojify probe ./demo.mp4
 
 ## What It Does
 
-Mojify accepts local video files and yt-dlp-compatible platform URLs as source media. It turns those sources into colored character frames that can be played live or exported through a curated set of media, image, and text formats.
+Mojify accepts local video files, local still images, and yt-dlp-compatible platform URLs as source media. It turns those sources into colored character frames that can be played live or exported through a curated set of media, image, and text formats.
 
 Current capabilities:
 
 - Local video playback
+- Local PNG and JPEG still-image input for `probe` and single-frame `export`
 - yt-dlp-compatible URL input
 - Live terminal audio playback
 - Curated export formats: MP4, WebM, MOV, GIF, APNG, PNG, JPEG, plain text, and ANSI text

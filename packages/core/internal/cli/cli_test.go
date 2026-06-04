@@ -259,6 +259,9 @@ func TestParseMissingInput(t *testing.T) {
 	if err == nil {
 		t.Fatal("Parse returned nil error for missing input")
 	}
+	if !strings.Contains(err.Error(), "source input") {
+		t.Fatalf("missing input error = %q, want source input wording", err.Error())
+	}
 }
 
 func TestParseExportMissingOutput(t *testing.T) {
@@ -268,6 +271,12 @@ func TestParseExportMissingOutput(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), "MP4") {
 		t.Fatalf("missing output error = %q, want format-neutral wording", err.Error())
+	}
+	if strings.Contains(err.Error(), "input media path") {
+		t.Fatalf("missing output error = %q, want source input wording", err.Error())
+	}
+	if !strings.Contains(err.Error(), "source input") {
+		t.Fatalf("missing output error = %q, want source input wording", err.Error())
 	}
 	if !strings.Contains(err.Error(), "output path") {
 		t.Fatalf("missing output error = %q, want output path wording", err.Error())
@@ -323,6 +332,9 @@ func TestParseRejectsUnsupportedProtocolInputs(t *testing.T) {
 			_, err := Parse([]string{command, input})
 			if err == nil {
 				t.Fatalf("Parse accepted unsupported %s input %q", command, input)
+			}
+			if !strings.Contains(err.Error(), "local source paths or HTTP(S) platform URLs only") {
+				t.Fatalf("unsupported %s input error = %q, want source wording", command, err.Error())
 			}
 		}
 	}
@@ -475,7 +487,7 @@ func TestHelpTextMentionsCommands(t *testing.T) {
 		"Print source media and render metadata",
 		"mojify export [options] <source> <output>",
 		"Export Mojify output to a supported file format",
-		"<source> may be a local video file or an HTTP(S) platform URL",
+		"<source> may be a local video file, local still image, or an HTTP(S) platform URL",
 		".mp4, .webm, .mov, .gif, .apng, .png, .jpg, .jpeg, .txt, .ansi",
 		"yt-dlp is required for platform URL inputs",
 		"--width <n>",
@@ -489,6 +501,18 @@ func TestHelpTextMentionsCommands(t *testing.T) {
 		"--workers <n>",
 		"FFmpeg and ffprobe",
 		"ffplay is required for live playback audio unless --no-audio is used",
+	} {
+		if !contains(help, want) {
+			t.Fatalf("HelpText() missing %q in:\n%s", want, help)
+		}
+	}
+}
+
+func TestHelpTextMentionsStillImageSources(t *testing.T) {
+	help := HelpText()
+	for _, want := range []string{
+		"<source> may be a local video file, local still image, or an HTTP(S) platform URL.",
+		"Still image sources can be probed and exported, but not played.",
 	} {
 		if !contains(help, want) {
 			t.Fatalf("HelpText() missing %q in:\n%s", want, help)

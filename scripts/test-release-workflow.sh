@@ -66,6 +66,8 @@ end
 tap_formula = 'tap_formula="$(brew --repository "$TAP_NAME")/Formula/${FORMULA_NAME}.rb"'
 copy_tap_formula = 'cp "$tap_formula" "Formula/${FORMULA_NAME}.rb"'
 merge_metadata = 'brew bottle --merge --write --no-commit "${json_args[@]}"'
+normalize_bottle_name = 'normalized="${bottle/${FORMULA_NAME}--/${FORMULA_NAME}-}"'
+bottle_artifact_glob = 'bottle_tarballs=( *.bottle*.tar.gz )'
 
 assert_includes(
   workflow,
@@ -84,5 +86,25 @@ assert_order(
   merge_metadata,
   copy_tap_formula,
   "merged bottle metadata must be copied back before the tap formula is committed",
+)
+
+assert_includes(
+  workflow,
+  normalize_bottle_name,
+  "release workflow must normalize Homebrew bottle tarball names before upload",
+)
+
+assert_order(
+  workflow,
+  'brew bottle --json --root-url "${{ needs.prepare.outputs.bottle_root_url }}" "$TAP_NAME/$FORMULA_NAME"',
+  normalize_bottle_name,
+  "bottle tarball normalization must happen after brew bottle creates artifacts",
+)
+
+assert_order(
+  workflow,
+  normalize_bottle_name,
+  bottle_artifact_glob,
+  "bottle tarball normalization must happen before artifact upload globs are collected",
 )
 RUBY

@@ -4,6 +4,6 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "bash test-release-workflow.sh"
+    "test": "bash test-homebrew-formula-renderer.sh && bash test-release-workflow.sh"
   }
 }

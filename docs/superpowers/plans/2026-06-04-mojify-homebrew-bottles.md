@@ -27,7 +27,7 @@
 - `docs/adr/0028-add-homebrew-bottles-with-source-fallback.md`: create the architectural decision record for true bottles plus source fallback.
 - `docs/release.md`: update the public runbook to document bottle publishing, tap bottle release assets, source fallback, and bottle smoke tests.
 - `README.md`: update the Homebrew install sentence so it no longer says Homebrew always builds Mojify from source.
-- `scripts/render-homebrew-formula.sh`: add explicit formula version metadata so calendar build tags do not depend on Homebrew URL version inference.
+- `scripts/render-homebrew-formula.sh`: keep Homebrew's URL-derived version inference; explicit calendar-build `version` metadata is redundant and fails audit.
 - `jassuwu/homebrew-tap/Formula/mojify.rb`: generated and pushed by the release workflow; do not edit it manually in this source repo plan.
 
 ## Task 1: Record the Bottle Distribution Decision

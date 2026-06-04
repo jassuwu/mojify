@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -97,6 +98,40 @@ func TestPlaybackAudioTogglePause(t *testing.T) {
 	audio.TogglePause()
 	if process.toggles != 1 {
 		t.Fatalf("toggles = %d, want 1", process.toggles)
+	}
+}
+
+func TestFFplayAudioProcessTogglePauseDoesNotUseStdinControl(t *testing.T) {
+	stdin := &recordingWriteCloser{}
+	process := &ffplayAudioProcess{
+		stdin: stdin,
+		done:  make(chan error),
+	}
+	if err := process.TogglePause(); err != nil {
+		t.Fatalf("TogglePause returned error: %v", err)
+	}
+	if stdin.writes != 0 {
+		t.Fatalf("stdin writes = %d, want 0; ffplay pause should use process pause/resume instead of stdin control", stdin.writes)
+	}
+}
+
+func TestFFplayAudioProcessTogglePauseAlternatesProcessPauseAndResume(t *testing.T) {
+	var pauses []bool
+	process := &ffplayAudioProcess{
+		done: make(chan error),
+		pauseProcess: func(cmd *exec.Cmd, pause bool) error {
+			pauses = append(pauses, pause)
+			return nil
+		},
+	}
+	if err := process.TogglePause(); err != nil {
+		t.Fatalf("first TogglePause returned error: %v", err)
+	}
+	if err := process.TogglePause(); err != nil {
+		t.Fatalf("second TogglePause returned error: %v", err)
+	}
+	if len(pauses) != 2 || !pauses[0] || pauses[1] {
+		t.Fatalf("pause sequence = %v, want [true false]", pauses)
 	}
 }
 
@@ -270,4 +305,17 @@ func (p *fakeAudioProcess) Done() <-chan error {
 		p.done = make(chan error)
 	}
 	return p.done
+}
+
+type recordingWriteCloser struct {
+	writes int
+}
+
+func (w *recordingWriteCloser) Write(data []byte) (int, error) {
+	w.writes++
+	return len(data), nil
+}
+
+func (w *recordingWriteCloser) Close() error {
+	return nil
 }

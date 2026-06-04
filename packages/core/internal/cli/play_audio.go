@@ -225,21 +225,31 @@ func (ffplayAudioBackend) Start(ctx context.Context, inputPath string) (playback
 }
 
 type ffplayAudioProcess struct {
-	mu     sync.Mutex
-	cmd    *exec.Cmd
-	stdin  io.WriteCloser
-	done   chan error
-	closed bool
+	mu           sync.Mutex
+	cmd          *exec.Cmd
+	stdin        io.WriteCloser
+	done         chan error
+	closed       bool
+	paused       bool
+	pauseProcess func(*exec.Cmd, bool) error
 }
 
 func (p *ffplayAudioProcess) TogglePause() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.closed || p.stdin == nil {
+	if p.closed {
 		return nil
 	}
-	_, err := io.WriteString(p.stdin, "p")
-	return err
+	nextPaused := !p.paused
+	pauseProcess := p.pauseProcess
+	if pauseProcess == nil {
+		pauseProcess = signalFFplayProcessPause
+	}
+	if err := pauseProcess(p.cmd, nextPaused); err != nil {
+		return err
+	}
+	p.paused = nextPaused
+	return nil
 }
 
 func (p *ffplayAudioProcess) Stop() error {

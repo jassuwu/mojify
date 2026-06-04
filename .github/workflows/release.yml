@@ -199,6 +199,16 @@ jobs:
           brew test "$TAP_NAME/$FORMULA_NAME"
           brew bottle --json --root-url "${{ needs.prepare.outputs.bottle_root_url }}" "$TAP_NAME/$FORMULA_NAME"
           shopt -s nullglob
+          for bottle in *.bottle*.tar.gz; do
+            normalized="${bottle/${FORMULA_NAME}--/${FORMULA_NAME}-}"
+            if [[ "$bottle" != "$normalized" ]]; then
+              if [[ -e "$normalized" ]]; then
+                echo "Refusing to overwrite existing normalized bottle: $normalized" >&2
+                exit 1
+              fi
+              mv "$bottle" "$normalized"
+            fi
+          done
           bottle_tarballs=( *.bottle*.tar.gz )
           bottle_json=( *.bottle.json )
           if (( ${#bottle_tarballs[@]} == 0 )); then

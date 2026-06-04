@@ -15,6 +15,13 @@
   <img alt="Platforms: macOS and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-555?style=flat-square">
 </p>
 
+<p align="center">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="docs/assets/readme/mojify-header-poster.png">
+    <img alt="Mojify transforms a polished mojify source animation into colored text video output." src="docs/assets/readme/mojify-header.gif" width="960">
+  </picture>
+</p>
+
 ## Installation
 
 ```bash
@@ -100,7 +107,6 @@ Homebrew installs declare `ffmpeg` and `yt-dlp`. Tarball installs require the ru
 
 Planned or likely follow-up work:
 
-- a Mojify-generated README header demo GIF
 - WebP export
 - custom renderer recipes
 - npm/npx wrapper around the native binary

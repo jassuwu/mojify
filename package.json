@@ -8,6 +8,7 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "dev:core": "turbo run dev --filter=@mojify/core",
+    "readme:header": "bash scripts/render-readme-header.sh",
     "qa:clips": "bash scripts/generate-qa-clips.sh",
     "qa:export": "bash scripts/export-qa.sh",
     "fmt": "gofmt -w packages/core",

@@ -64,6 +64,12 @@ mojify export --overwrite --width 320 ./poster.png ./dist/poster-mojify.png
 mojify export --overwrite --width 80 ./poster.png ./dist/poster-mojify.ansi
 ```
 
+Choose a built-in recipe preset:
+
+```bash
+mojify export --overwrite --recipe blocks --width 320 ./poster.png ./dist/poster-blocks.png
+```
+
 Inspect what Mojify will derive from a source:
 
 ```bash
@@ -84,6 +90,7 @@ Current capabilities:
 - Source audio preservation for supported video exports when audio is available
 - Truecolor ANSI output
 - Edge-aware character rendering
+- Built-in recipe presets: `default`, `mono`, `ascii`, and `blocks`
 - `play`, `probe`, and `export` commands
 
 ## Why Mojify
@@ -100,6 +107,8 @@ The default renderer is built around a practical media-to-text recipe:
 - frame timing favors smooth playback over showing every decoded frame
 
 Future renderer recipes may swap the character set, color strategy, or conversion rules entirely. Emoji output and custom character recipes are intentionally left as future product surface, not current README promises.
+
+See [Recipes](docs/recipes.md) for built-in preset behavior and the future custom recipe direction.
 
 ## Requirements
 

@@ -33,7 +33,7 @@ func main() {
 			os.Stdin,
 			os.Stdout,
 			os.Stderr,
-			cli.PlayOptions{Stats: cmd.Stats, NoAudio: cmd.NoAudio},
+			cmd.Play,
 		); err != nil {
 			fmt.Fprintf(os.Stderr, "play failed: %v\n", err)
 			os.Exit(1)

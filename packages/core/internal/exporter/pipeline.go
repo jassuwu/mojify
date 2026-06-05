@@ -125,17 +125,18 @@ func runExportFramePipeline(ctx context.Context, options exportFramePipelineOpti
 	return written, nil
 }
 
-func newExportFrameProcessorFactory(layout Layout, metrics *exportMetrics, clock exportClock) func() (exportFrameProcessor, error) {
+func newExportFrameProcessorFactory(layout Layout, metrics *exportMetrics, clock exportClock, recipe render.Recipe) func() (exportFrameProcessor, error) {
 	if clock == nil {
 		clock = realExportClock{}
 	}
+	recipe = recipeOrDefault(recipe)
 	return func() (exportFrameProcessor, error) {
 		face, err := fonts.DefaultFace()
 		if err != nil {
 			return nil, fmt.Errorf("load export font: %w", err)
 		}
 		rasterizer := NewRasterizer(face)
-		renderer := render.DefaultRenderer{}
+		renderer := render.NewRenderer(recipe)
 
 		return func(_ int, rgbFrame render.RGBFrame) ([]byte, error) {
 			renderStart := clock.Now()

@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/jass/mojify/packages/core/internal/exporter"
+	"github.com/jass/mojify/packages/core/internal/render"
 )
 
 type CommandKind int
@@ -31,14 +32,14 @@ type ExportOptions struct {
 	AtSeconds       float64
 	HasDuration     bool
 	DurationSeconds float64
+	Recipe          render.Recipe
 }
 
 type Command struct {
 	Kind       CommandKind
 	InputPath  string
 	OutputPath string
-	Stats      bool
-	NoAudio    bool
+	Play       PlayOptions
 	Export     ExportOptions
 }
 
@@ -69,7 +70,8 @@ func HelpText() string {
 Terminal-first video playback with colored, edge-aware character frames.
 
 Usage:
-  mojify play [--stats] [--no-audio] <source>           Play source media in the terminal
+  mojify play [--stats] [--no-audio] [--recipe <name>] <source>
+                                                        Play source media in the terminal
   mojify probe <source>                                 Print source media and render metadata
   mojify export [options] <source> <output>             Export Mojify output to a supported file format
   mojify --version                                      Print the installed Mojify version
@@ -85,6 +87,7 @@ Export output formats:
 Play options:
   --stats             Print playback timing stats after completion
   --no-audio          Disable live playback audio for play
+  --recipe <name>     Built-in recipe preset: default, mono, ascii, blocks
 
 Export options:
   --width <n>         Pixel width for media/image outputs; columns for text outputs
@@ -95,6 +98,7 @@ Export options:
   --overwrite         Replace an existing output file
   --stats             Print export timing stats after completion
   --workers <n>       Render and rasterize with n workers
+  --recipe <name>     Built-in recipe preset: default, mono, ascii, blocks
 
 Requirements:
   FFmpeg and ffprobe must be available on PATH.
@@ -111,7 +115,10 @@ func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 	var inputPath string
 	stats := false
 	noAudio := false
-	for _, arg := range args[1:] {
+	recipe := render.DefaultRecipe()
+	seenRecipe := false
+	for i := 1; i < len(args); i++ {
+		arg := args[i]
 		switch arg {
 		case "--stats":
 			if kind != PlayCommand {
@@ -129,7 +136,27 @@ func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 				return Command{}, fmt.Errorf("%s accepts --no-audio only once", args[0])
 			}
 			noAudio = true
+		case "--recipe":
+			if kind != PlayCommand {
+				return Command{}, fmt.Errorf("%s does not accept --recipe", args[0])
+			}
+			if seenRecipe {
+				return Command{}, fmt.Errorf("%s accepts --recipe only once", args[0])
+			}
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("%s requires a value for --recipe", args[0])
+			}
+			i++
+			selected, err := render.RecipeByName(args[i])
+			if err != nil {
+				return Command{}, err
+			}
+			recipe = selected
+			seenRecipe = true
 		default:
+			if strings.HasPrefix(arg, "--") {
+				return Command{}, fmt.Errorf("unknown %s option %q", args[0], arg)
+			}
 			if inputPath != "" {
 				return Command{}, fmt.Errorf("%s accepts exactly one source input", args[0])
 			}
@@ -142,14 +169,20 @@ func parseInputCommand(kind CommandKind, args []string) (Command, error) {
 	if hasUnsupportedSourceProtocol(inputPath) {
 		return Command{}, fmt.Errorf("%s accepts local source paths or HTTP(S) platform URLs only", args[0])
 	}
-	return Command{Kind: kind, InputPath: inputPath, Stats: stats, NoAudio: noAudio}, nil
+	play := PlayOptions{
+		Stats:   stats,
+		NoAudio: noAudio,
+		Recipe:  recipe,
+	}
+	return Command{Kind: kind, InputPath: inputPath, Play: play}, nil
 }
 
 func parseExportCommand(args []string) (Command, error) {
 	paths := make([]string, 0, 2)
-	options := ExportOptions{}
+	options := ExportOptions{Recipe: render.DefaultRecipe()}
 	seenOverwrite := false
 	seenStats := false
+	seenRecipe := false
 
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
@@ -229,6 +262,20 @@ func parseExportCommand(args []string) (Command, error) {
 				return Command{}, fmt.Errorf("export requires --workers to be greater than 0")
 			}
 			options.Workers = workers
+		case "--recipe":
+			if seenRecipe {
+				return Command{}, fmt.Errorf("export accepts --recipe only once")
+			}
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("export requires a value for --recipe")
+			}
+			i++
+			recipe, err := render.RecipeByName(args[i])
+			if err != nil {
+				return Command{}, err
+			}
+			options.Recipe = recipe
+			seenRecipe = true
 		default:
 			if strings.HasPrefix(arg, "--") {
 				return Command{}, fmt.Errorf("unknown export option %q", arg)

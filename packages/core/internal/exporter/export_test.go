@@ -148,3 +148,23 @@ func TestExportTextWritesSingleFrameFile(t *testing.T) {
 		t.Fatalf("text output = %q, want non-empty multi-line text", string(data))
 	}
 }
+
+func TestExportSingleTextFrameForTestUsesSelectedRecipe(t *testing.T) {
+	output := filepath.Join(t.TempDir(), "out.txt")
+	frame := render.NewRGBFrame(1, 1, []byte{255, 255, 255})
+
+	err := exportSingleTextFrameForTest(frame, output, Options{
+		Format: OutputFormat{Extension: ".txt", Family: OutputFamilyText, Text: true, SingleFrame: true},
+		Recipe: render.MustRecipeByName("blocks"),
+	})
+	if err != nil {
+		t.Fatalf("exportSingleTextFrameForTest returned error: %v", err)
+	}
+	content, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatalf("ReadFile returned error: %v", err)
+	}
+	if !strings.Contains(string(content), "█") {
+		t.Fatalf("text output = %q, want block glyph", string(content))
+	}
+}

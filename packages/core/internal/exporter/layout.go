@@ -28,6 +28,7 @@ type Options struct {
 	HasDuration         bool
 	DurationSeconds     float64
 	Format              OutputFormat
+	Recipe              render.Recipe
 }
 
 type InputInfo struct {

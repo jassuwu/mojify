@@ -21,6 +21,7 @@ import (
 type PlayOptions struct {
 	Stats   bool
 	NoAudio bool
+	Recipe  render.Recipe
 }
 
 type playRunnerOptions struct {
@@ -87,7 +88,7 @@ func runPlayWithOptions(ctx context.Context, inputPath string, stdin *os.File, s
 	frames := make(chan render.CharacterFrame, 12)
 	renderErr := make(chan error, 1)
 	renderDone := make(chan struct{})
-	renderer := render.DefaultRenderer{}
+	renderer := render.NewRenderer(recipeOrDefault(options.Recipe))
 	if metrics != nil {
 		metrics.Start(time.Now())
 	}
@@ -189,6 +190,13 @@ func runPlayWithOptions(ctx context.Context, inputPath string, stdin *os.File, s
 	}
 	printStats(stderr, options, metrics, audio.Status())
 	return resultErr
+}
+
+func recipeOrDefault(recipe render.Recipe) render.Recipe {
+	if recipe.Name == "" {
+		return render.DefaultRecipe()
+	}
+	return recipe
 }
 
 func cleanupDecoder(cmd *exec.Cmd, pipe io.Closer) error {

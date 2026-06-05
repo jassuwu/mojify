@@ -61,9 +61,13 @@ func (r Rasterizer) Rasterize(frame render.CharacterFrame, layout Layout) ([]byt
 				x += (r.CellWidth - advance) / 2
 			}
 			y := row*r.CellHeight + ascent
+			glyphColor := color.RGBA{R: 255, G: 255, B: 255, A: 255}
+			if cell.HasColor {
+				glyphColor = color.RGBA{R: cell.R, G: cell.G, B: cell.B, A: 255}
+			}
 			drawer := font.Drawer{
 				Dst:  canvas,
-				Src:  image.NewUniform(color.RGBA{R: cell.R, G: cell.G, B: cell.B, A: 255}),
+				Src:  image.NewUniform(glyphColor),
 				Face: r.Face,
 				Dot:  fixed.Point26_6{X: fixed.I(x), Y: fixed.I(y)},
 			}

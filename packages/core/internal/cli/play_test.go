@@ -14,6 +14,7 @@ import (
 	"github.com/jass/mojify/packages/core/internal/media"
 	"github.com/jass/mojify/packages/core/internal/playback"
 	"github.com/jass/mojify/packages/core/internal/player"
+	"github.com/jass/mojify/packages/core/internal/render"
 	"github.com/jass/mojify/packages/core/internal/terminal"
 )
 
@@ -141,6 +142,26 @@ func TestRunPlayResolvesPlatformURLBeforeProbeAndCleansUp(t *testing.T) {
 	tempDir := strings.TrimSpace(string(tempDirData))
 	if _, err := os.Stat(tempDir); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("temp dir still exists after play probe error, stat err = %v", err)
+	}
+}
+
+func TestRunPlayAcceptsSelectedRecipeBeforeProbe(t *testing.T) {
+	probeErr := errors.New("stop after probe")
+	var probedPath string
+
+	err := runPlayWithOptions(context.Background(), "clip.mov", os.Stdin, io.Discard, io.Discard, PlayOptions{
+		Recipe: render.MustRecipeByName("blocks"),
+	}, playRunnerOptions{
+		Probe: func(ctx context.Context, path string) (media.Info, error) {
+			probedPath = path
+			return media.Info{}, probeErr
+		},
+	})
+	if err == nil || !errors.Is(err, probeErr) {
+		t.Fatalf("error = %v, want probe sentinel", err)
+	}
+	if probedPath != "clip.mov" {
+		t.Fatalf("probe path = %q, want clip.mov", probedPath)
 	}
 }
 

@@ -143,7 +143,7 @@ func exportTimeBasedMedia(ctx context.Context, inputPath string, outputPath stri
 		ReadFrame: func() (render.RGBFrame, error) {
 			return media.ReadRawFrame(decodePipe, layout.Grid.Cols, layout.Grid.Rows)
 		},
-		NewProcessor: newExportFrameProcessorFactory(layout, metrics, metricsClock),
+		NewProcessor: newExportFrameProcessorFactory(layout, metrics, metricsClock, recipeOrDefault(options.Recipe)),
 		WriteFrame: func(raw []byte) error {
 			_, err := encodePipe.Write(raw)
 			return err
@@ -267,7 +267,7 @@ func exportSingleTextFrameForTest(frame render.RGBFrame, outputPath string, opti
 	if err != nil {
 		return err
 	}
-	charFrame := render.DefaultRenderer{}.Render(frame, layout.Grid)
+	charFrame := render.NewRenderer(recipeOrDefault(options.Recipe)).Render(frame, layout.Grid)
 	text, err := SerializeTextFrame(charFrame, options.Format)
 	if err != nil {
 		return err
@@ -309,7 +309,14 @@ func renderSingleCharacterFrame(ctx context.Context, inputPath string, layout La
 	if err != nil {
 		return render.CharacterFrame{}, fmt.Errorf("read decoded frame: %w", err)
 	}
-	return render.DefaultRenderer{}.Render(rgbFrame, layout.Grid), nil
+	return render.NewRenderer(recipeOrDefault(options.Recipe)).Render(rgbFrame, layout.Grid), nil
+}
+
+func recipeOrDefault(recipe render.Recipe) render.Recipe {
+	if recipe.Name == "" {
+		return render.DefaultRecipe()
+	}
+	return recipe
 }
 
 func encodeFormatForOutput(format OutputFormat) (media.EncodeFormat, error) {

@@ -33,6 +33,7 @@ func runExportWithOptions(ctx context.Context, inputPath string, outputPath stri
 		AtSeconds:           options.AtSeconds,
 		HasDuration:         options.HasDuration,
 		DurationSeconds:     options.DurationSeconds,
+		Recipe:              options.Recipe,
 	}
 
 	resolved, err := resolveSourceMediaWithOptions(ctx, inputPath, sourceResolverOptions{

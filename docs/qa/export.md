@@ -49,13 +49,28 @@ Expected generated output:
 - `dist/qa/export/low-motion-bars-frame.ansi`
 - `dist/qa/export/still-source-output.png`
 - `dist/qa/export/still-source-output.jpg`
+- `dist/qa/export/still-source-output.jpeg`
 - `dist/qa/export/still-source-output.txt`
 - `dist/qa/export/still-source-output.ansi`
+- `dist/qa/export/recipe-default.png`
+- `dist/qa/export/recipe-default.ansi`
+- `dist/qa/export/recipe-mono.png`
+- `dist/qa/export/recipe-mono.ansi`
+- `dist/qa/export/recipe-ascii.png`
+- `dist/qa/export/recipe-ascii.ansi`
+- `dist/qa/export/recipe-blocks.png`
+- `dist/qa/export/recipe-blocks.ansi`
+- `dist/qa/export/recipe-blocks-video.mp4`
 - `ffprobe` reports a video or image stream for the synthetic media/image exports.
 - The exported synthetic media/image streams have width `320`.
 - The exported synthetic text files are non-empty.
 - The exported still-source image streams have width `320`.
 - The exported still-source text files are non-empty.
+- Recipe preset matrix exports still-source `.png` and `.ansi` outputs for `default`, `mono`, `ascii`, and `blocks`.
+- Recipe preset image outputs have width `320`.
+- Recipe preset ANSI outputs are non-empty.
+- `default` and `blocks` ANSI outputs emit foreground color escapes, while `mono` and `ascii` ANSI outputs do not.
+- Time-based recipe export writes `recipe-blocks-video.mp4` with width `320`.
 - Unsupported `.webp` output is rejected.
 - `--duration` is rejected for single-frame outputs.
 - Still-source export rejects `--at`, `--duration`, and time-based output such as `.mp4`.
@@ -147,8 +162,12 @@ The audio QA passes when each exported video file contains an audio stream. If t
 | `.ansi` | `low-motion-bars-frame.ansi` | `--at 0s --width 80` | non-empty ANSI text |
 | `.png` from still source | `still-source-output.png` | no timestamp flags | image stream, width `320` |
 | `.jpg` from still source | `still-source-output.jpg` | no timestamp flags | image stream, width `320` |
+| `.jpeg` from still source | `still-source-output.jpeg` | no timestamp flags | image stream, width `320` |
 | `.txt` from still source | `still-source-output.txt` | `--width 80` only | non-empty text |
 | `.ansi` from still source | `still-source-output.ansi` | `--width 80` only | non-empty ANSI text |
+| `.png` recipe preset matrix | `recipe-<preset>.png` | still source with `--recipe default`, `mono`, `ascii`, and `blocks` | image stream, width `320` |
+| `.ansi` recipe preset matrix | `recipe-<preset>.ansi` | still source with `--recipe default`, `mono`, `ascii`, and `blocks`, `--width 80` | non-empty ANSI text; `default` and `blocks` have foreground color escapes; `mono` and `ascii` have no foreground color escapes |
+| `.mp4` recipe smoke | `recipe-blocks-video.mp4` | synthetic source with `--recipe blocks --duration 1s` | video stream, width `320` |
 | `.mp4`, `.webm`, `.mov` | `real-sample-export.<ext>` | `--duration 2s` with optional real sample | audio stream present |
 
 ## Checklist
@@ -156,9 +175,14 @@ The audio QA passes when each exported video file contains an audio stream. If t
 - Synthetic export completes without prompting because `--overwrite` is set.
 - Synthetic export writes the representative matrix outputs.
 - Still-source export writes representative single-frame image and text outputs.
+- Recipe preset matrix exports still-source `.png` and `.ansi` outputs for `default`, `mono`, `ascii`, and `blocks`.
 - `ffprobe` finds video/image stream `v:0` for media and image outputs.
 - The exported media/image width is `320`.
 - Text outputs are non-empty single-frame exports.
+- Recipe preset image outputs have width `320`.
+- Recipe preset ANSI outputs are non-empty.
+- `default` and `blocks` ANSI outputs emit foreground color escapes, while `mono` and `ascii` ANSI outputs do not.
+- Time-based recipe export writes a width-checked `recipe-blocks-video.mp4`.
 - `--at` works for video, animated, still image, and still text outputs from timeline sources.
 - `--duration` works for video and animated outputs.
 - `--duration` is rejected for still image outputs in automated QA and for all still image/text outputs by parser tests.

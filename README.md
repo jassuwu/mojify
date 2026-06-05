@@ -32,6 +32,12 @@ Homebrew installs a Mojify bottle when one is available for your host, builds fr
 
 You can also download a macOS or Linux tarball from [GitHub Releases](https://github.com/jassuwu/mojify/releases) and place `mojify` on your `PATH`.
 
+Check runtime tools:
+
+```bash
+mojify doctor
+```
+
 Windows support is WSL-only for now.
 
 ## Usage
@@ -91,7 +97,8 @@ Current capabilities:
 - Truecolor ANSI output
 - Edge-aware character rendering
 - Built-in recipe presets: `default`, `mono`, `ascii`, and `blocks`
-- `play`, `probe`, and `export` commands
+- Runtime dependency check with `mojify doctor`
+- `play`, `probe`, `export`, and `doctor` commands
 
 ## Why Mojify
 
@@ -118,14 +125,13 @@ Mojify shells out to battle-tested media tools instead of reimplementing their j
 - `ffplay` for live playback audio
 - `yt-dlp` for platform URL inputs
 
-Homebrew installs declare `ffmpeg` and `yt-dlp`. Tarball installs require the runtime tools to be installed separately.
+Homebrew installs declare `ffmpeg` and `yt-dlp`. Tarball installs require the runtime tools to be installed separately. Run `mojify doctor` to check the tools visible to the installed binary.
 
 ## Roadmap
 
 Planned or likely follow-up work:
 
 - custom renderer recipes
-- npm/npx wrapper around the native binary
 - native Windows support beyond WSL
 - a desktop app?
 - a landing site?

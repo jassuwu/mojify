@@ -24,6 +24,12 @@ func main() {
 		fmt.Print(cli.HelpText())
 	case cli.VersionCommand:
 		fmt.Print(cli.VersionText())
+	case cli.DoctorCommand:
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		if err := cli.RunDoctor(ctx, os.Stdout); err != nil {
+			os.Exit(1)
+		}
 	case cli.PlayCommand:
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()

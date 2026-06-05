@@ -144,6 +144,10 @@ _Avoid_: Diagnostics command, full build manifest, update checker
 A command-specific error message that tells users which external tool is missing and how to install it when Mojify cannot run a requested media operation.
 _Avoid_: Doctor command, dependency installer, background repair
 
+**Runtime doctor**:
+The `mojify doctor` CLI command that checks whether external runtime tools are available on `PATH`, treating `ffmpeg` and `ffprobe` as required and `ffplay` and `yt-dlp` as optional capability warnings.
+_Avoid_: Dependency installer, Homebrew repair command, network smoke test
+
 **WSL-only Windows support**:
 The first Windows distribution stance for Mojify, where Windows users run the Linux CLI inside WSL instead of a native Windows binary.
 _Avoid_: Native Windows binary, PowerShell-first install, Windows audio backend

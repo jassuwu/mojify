@@ -105,6 +105,32 @@ func TestParseVersionCommands(t *testing.T) {
 	}
 }
 
+func TestParseDoctorCommand(t *testing.T) {
+	cmd, err := Parse([]string{"doctor"})
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+	if cmd.Kind != DoctorCommand {
+		t.Fatalf("Kind = %v, want %v", cmd.Kind, DoctorCommand)
+	}
+}
+
+func TestParseDoctorRejectsArgumentsAndOptions(t *testing.T) {
+	for _, args := range [][]string{
+		{"doctor", "--json"},
+		{"doctor", "--help"},
+		{"doctor", "ffmpeg"},
+	} {
+		_, err := Parse(args)
+		if err == nil {
+			t.Fatalf("Parse(%v) returned nil error", args)
+		}
+		if !strings.Contains(err.Error(), "doctor accepts no arguments or options") {
+			t.Fatalf("Parse(%v) error = %q, want doctor rejection", args, err.Error())
+		}
+	}
+}
+
 func TestParseRejectsNoAudioForProbe(t *testing.T) {
 	_, err := Parse([]string{"probe", "--no-audio", "clip.mp4"})
 	if err == nil {
@@ -540,6 +566,8 @@ func TestHelpTextMentionsCommands(t *testing.T) {
 		"Print source media and render metadata",
 		"mojify export [options] <source> <output>",
 		"Export Mojify output to a supported file format",
+		"mojify doctor",
+		"Check runtime dependency health",
 		"<source> may be a local video file, local still image, or an HTTP(S) platform URL",
 		".mp4, .webm, .mov, .gif, .apng, .png, .jpg, .jpeg, .txt, .ansi",
 		"yt-dlp is required for platform URL inputs",

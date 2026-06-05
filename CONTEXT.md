@@ -236,6 +236,18 @@ _Avoid_: Default recipe without color, edge-aware ASCII, Unicode art
 A built-in recipe preset that uses a Unicode shade/block luminance ramp with source color enabled and edge glyph overrides disabled.
 _Avoid_: Braille renderer, emoji recipe, classic ASCII
 
+**Future renderer pipeline**:
+A later chafa-inspired renderer architecture where recipes can describe explicit axes such as symbol maps, cell geometry, color strategy, preprocessing, dithering, and output optimization.
+_Avoid_: Current recipe presets, arbitrary script plugin, FFmpeg filter graph
+
+**Symbol map**:
+The set of glyphs a renderer may choose from when turning source pixels into terminal cells. A simple density ramp is one symbol map shape, but future renderers may use wider maps with glyph-mask scoring.
+_Avoid_: Font, palette, recipe file
+
+**Terminal output backend**:
+The presenter or export target strategy that decides how rendered cells are written, such as truecolor ANSI text, half-block cells, or future terminal image protocols.
+_Avoid_: Renderer recipe, media encoder, source decoder
+
 **Golden renderer test**:
 A test fixture that locks expected character, color, and edge output for a small input frame.
 _Avoid_: Screenshot test, demo clip

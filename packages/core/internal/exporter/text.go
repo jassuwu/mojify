@@ -53,10 +53,15 @@ func serializeANSITextFrame(frame render.CharacterFrame) string {
 	for row := 0; row < frame.Height; row++ {
 		for col := 0; col < frame.Width; col++ {
 			cell := frame.Cells[row*frame.Width+col]
-			if !hasColor || cell.R != lastR || cell.G != lastG || cell.B != lastB {
-				fmt.Fprintf(&b, "\x1b[38;2;%d;%d;%dm", cell.R, cell.G, cell.B)
-				lastR, lastG, lastB = cell.R, cell.G, cell.B
-				hasColor = true
+			if cell.HasColor {
+				if !hasColor || cell.R != lastR || cell.G != lastG || cell.B != lastB {
+					fmt.Fprintf(&b, "\x1b[38;2;%d;%d;%dm", cell.R, cell.G, cell.B)
+					lastR, lastG, lastB = cell.R, cell.G, cell.B
+					hasColor = true
+				}
+			} else if hasColor {
+				b.WriteString("\x1b[39m")
+				hasColor = false
 			}
 			b.WriteRune(textCellRune(cell))
 		}

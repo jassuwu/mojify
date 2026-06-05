@@ -233,6 +233,26 @@ func TestRunExportFramePipelineCreatesProcessorPerWorker(t *testing.T) {
 	}
 }
 
+func TestExportFrameProcessorFactoryUsesSelectedRecipe(t *testing.T) {
+	layout := Layout{
+		OutputWidth:  ExportCellWidth,
+		OutputHeight: ExportCellHeight,
+		Grid:         render.Grid{Cols: 1, Rows: 1},
+		FPS:          24,
+	}
+	processor, err := newExportFrameProcessorFactory(layout, nil, fakeExportClock(time.Unix(0, 0)), render.MustRecipeByName("blocks"))()
+	if err != nil {
+		t.Fatalf("processor factory returned error: %v", err)
+	}
+	raw, err := processor(0, render.NewRGBFrame(1, 1, []byte{255, 255, 255}))
+	if err != nil {
+		t.Fatalf("processor returned error: %v", err)
+	}
+	if !cellContainsRGB(raw, layout.OutputWidth, 0, 0, 255, 255, 255) {
+		t.Fatal("processor did not rasterize selected recipe output as white block pixels")
+	}
+}
+
 func TestReadExportFramesWaitsForInFlightPermit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

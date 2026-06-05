@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/jass/mojify/packages/core/internal/exporter"
+	"github.com/jass/mojify/packages/core/internal/render"
 )
 
 func TestIsTerminalWriterReturnsFalseForPlainWriter(t *testing.T) {
@@ -130,6 +131,26 @@ func TestRunExportPassesTimeOptionsAndUsesGeneralExporter(t *testing.T) {
 	}
 	if !gotOptions.HasDuration || gotOptions.DurationSeconds != 3 {
 		t.Fatalf("Duration = (%v, %v), want (true, 3)", gotOptions.HasDuration, gotOptions.DurationSeconds)
+	}
+}
+
+func TestRunExportPassesRecipeToExporter(t *testing.T) {
+	exportErr := errors.New("stop after export handoff")
+	var gotOptions exporter.Options
+
+	err := runExportWithOptions(context.Background(), "clip.mov", "out.png", io.Discard, ExportOptions{
+		Recipe: render.MustRecipeByName("blocks"),
+	}, exportRunnerOptions{
+		Export: func(ctx context.Context, inputPath string, outputPath string, stderr io.Writer, options exporter.Options) error {
+			gotOptions = options
+			return exportErr
+		},
+	})
+	if !errors.Is(err, exportErr) {
+		t.Fatalf("error = %v, want export sentinel", err)
+	}
+	if gotOptions.Recipe.Name != "blocks" {
+		t.Fatalf("recipe = %q, want blocks", gotOptions.Recipe.Name)
 	}
 }
 

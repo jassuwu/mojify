@@ -39,8 +39,8 @@ func TestParsePlayStatsBeforeInput(t *testing.T) {
 	if cmd.InputPath != "clip.mp4" {
 		t.Fatalf("InputPath = %q, want clip.mp4", cmd.InputPath)
 	}
-	if !cmd.Stats {
-		t.Fatal("Stats = false, want true")
+	if !cmd.Play.Stats {
+		t.Fatal("Play.Stats = false, want true")
 	}
 }
 
@@ -52,8 +52,8 @@ func TestParsePlayStatsAfterInput(t *testing.T) {
 	if cmd.InputPath != "clip.mp4" {
 		t.Fatalf("InputPath = %q, want clip.mp4", cmd.InputPath)
 	}
-	if !cmd.Stats {
-		t.Fatal("Stats = false, want true")
+	if !cmd.Play.Stats {
+		t.Fatal("Play.Stats = false, want true")
 	}
 }
 
@@ -68,8 +68,8 @@ func TestParsePlayNoAudioBeforeInput(t *testing.T) {
 	if cmd.InputPath != "clip.mp4" {
 		t.Fatalf("InputPath = %q, want clip.mp4", cmd.InputPath)
 	}
-	if !cmd.NoAudio {
-		t.Fatal("NoAudio = false, want true")
+	if !cmd.Play.NoAudio {
+		t.Fatal("Play.NoAudio = false, want true")
 	}
 }
 
@@ -78,8 +78,8 @@ func TestParsePlayNoAudioAfterInput(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Parse returned error: %v", err)
 	}
-	if !cmd.NoAudio {
-		t.Fatal("NoAudio = false, want true")
+	if !cmd.Play.NoAudio {
+		t.Fatal("Play.NoAudio = false, want true")
 	}
 }
 
@@ -251,6 +251,59 @@ func TestParseExportRejectsInvalidWorkers(t *testing.T) {
 		if err == nil {
 			t.Fatalf("Parse returned nil error for invalid --workers %q", workers)
 		}
+	}
+}
+
+func TestParsePlayRecipe(t *testing.T) {
+	cmd, err := Parse([]string{"play", "--recipe", "blocks", "clip.mp4"})
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+	if cmd.Play.Recipe.Name != "blocks" {
+		t.Fatalf("play recipe = %q, want blocks", cmd.Play.Recipe.Name)
+	}
+}
+
+func TestParseExportRecipe(t *testing.T) {
+	cmd, err := Parse([]string{"export", "--recipe", "mono", "clip.mp4", "out.ansi"})
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+	if cmd.Export.Recipe.Name != "mono" {
+		t.Fatalf("export recipe = %q, want mono", cmd.Export.Recipe.Name)
+	}
+}
+
+func TestParseRecipeRejectsUnknownBeforeCommandExecution(t *testing.T) {
+	_, err := Parse([]string{"play", "--recipe", "banana", "https://example.com/watch?v=demo"})
+	if err == nil {
+		t.Fatal("Parse returned nil error for unknown recipe")
+	}
+	if !strings.Contains(err.Error(), `unsupported recipe "banana"`) {
+		t.Fatalf("error = %v, want unsupported recipe", err)
+	}
+	if !strings.Contains(err.Error(), "default, mono, ascii, blocks") {
+		t.Fatalf("error = %v, want supported recipe list", err)
+	}
+}
+
+func TestParseProbeRejectsRecipe(t *testing.T) {
+	_, err := Parse([]string{"probe", "--recipe", "blocks", "clip.mp4"})
+	if err == nil {
+		t.Fatal("Parse returned nil error for probe --recipe")
+	}
+	if !strings.Contains(err.Error(), "probe does not accept --recipe") {
+		t.Fatalf("error = %v, want probe --recipe rejection", err)
+	}
+}
+
+func TestParseRecipeRequiresValue(t *testing.T) {
+	_, err := Parse([]string{"play", "--recipe"})
+	if err == nil {
+		t.Fatal("Parse returned nil error for missing recipe value")
+	}
+	if !strings.Contains(err.Error(), "play requires a value for --recipe") {
+		t.Fatalf("error = %v, want missing recipe value", err)
 	}
 }
 
@@ -480,7 +533,7 @@ func TestParseExportRejectsUnknownOption(t *testing.T) {
 func TestHelpTextMentionsCommands(t *testing.T) {
 	help := HelpText()
 	for _, want := range []string{
-		"mojify play [--stats] [--no-audio] <source>",
+		"mojify play [--stats] [--no-audio] [--recipe <name>] <source>",
 		"Play source media in the terminal",
 		"mojify --version",
 		"mojify probe <source>",
@@ -499,6 +552,8 @@ func TestHelpTextMentionsCommands(t *testing.T) {
 		"--stats",
 		"--no-audio",
 		"--workers <n>",
+		"--recipe <name>",
+		"Built-in recipe preset: default, mono, ascii, blocks",
 		"FFmpeg and ffprobe",
 		"ffplay is required for live playback audio unless --no-audio is used",
 	} {

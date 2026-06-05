@@ -19,6 +19,7 @@ still_jpg="${export_dir}/still-source-output.jpg"
 still_jpeg="${export_dir}/still-source-output.jpeg"
 still_txt="${export_dir}/still-source-output.txt"
 still_ansi="${export_dir}/still-source-output.ansi"
+recipe_video="${export_dir}/recipe-blocks-video.mp4"
 
 require_nonempty_file() {
   local path="$1"
@@ -87,13 +88,45 @@ check_audio_stream() {
 }
 
 expect_export_failure() {
-  local label="$1"
-  shift
+	local label="$1"
+	local expected_error="$2"
+	shift
+	shift
 
-  if "$@" >"${export_dir}/${label}.out" 2>"${export_dir}/${label}.err"; then
-    printf 'Expected export command to fail for %s.\n' "${label}" >&2
-    exit 1
-  fi
+	if "$@" >"${export_dir}/${label}.out" 2>"${export_dir}/${label}.err"; then
+		printf 'Expected export command to fail for %s.\n' "${label}" >&2
+		exit 1
+	fi
+	if ! LC_ALL=C grep -Fq "${expected_error}" "${export_dir}/${label}.err"; then
+		printf 'Expected export failure for %s to include %q.\n' "${label}" "${expected_error}" >&2
+		printf 'Actual stderr:\n' >&2
+		cat "${export_dir}/${label}.err" >&2
+		exit 1
+	fi
+}
+
+ansi_foreground_pattern() {
+	printf '\033\\[[0-9;]*(3[0-7]|9[0-7]|38;[25];)'
+}
+
+require_ansi_foreground_color() {
+	local path="$1"
+	local label="$2"
+
+	if ! LC_ALL=C grep -Eq "$(ansi_foreground_pattern)" "${path}"; then
+		printf 'Expected %s ANSI recipe output to include foreground color escapes.\n' "${label}" >&2
+		exit 1
+	fi
+}
+
+reject_ansi_foreground_color() {
+	local path="$1"
+	local label="$2"
+
+	if LC_ALL=C grep -Eq "$(ansi_foreground_pattern)" "${path}"; then
+		printf 'Expected %s ANSI recipe output to avoid foreground color escapes.\n' "${label}" >&2
+		exit 1
+	fi
 }
 
 if [[ ! -x ./bin/mojify ]]; then
@@ -149,21 +182,48 @@ check_video_width "${still_jpeg}" "320"
 require_nonempty_file "${still_txt}"
 require_nonempty_file "${still_ansi}"
 
+printf '\nExporting still-source recipe preset matrix...\n'
+for recipe in default mono ascii blocks; do
+  recipe_png="${export_dir}/recipe-${recipe}.png"
+  recipe_ansi="${export_dir}/recipe-${recipe}.ansi"
+
+  ./bin/mojify export --overwrite --recipe "${recipe}" --width 320 "${still_source}" "${recipe_png}"
+  ./bin/mojify export --overwrite --recipe "${recipe}" --width 80 "${still_source}" "${recipe_ansi}"
+
+  check_video_width "${recipe_png}" "320"
+  require_nonempty_file "${recipe_ansi}"
+
+  if [[ "${recipe}" == "default" || "${recipe}" == "blocks" ]]; then
+    require_ansi_foreground_color "${recipe_ansi}" "${recipe}"
+  else
+    reject_ansi_foreground_color "${recipe_ansi}" "${recipe}"
+  fi
+done
+
+printf '\nExporting time-based recipe smoke...\n'
+./bin/mojify export --overwrite --recipe blocks --width 320 --duration 1s "${synthetic_source}" "${recipe_video}"
+check_video_width "${recipe_video}" "320"
+
 printf '\nChecking export validation failures...\n'
 expect_export_failure \
   "unsupported-webp" \
+  'unsupported export output extension ".webp"' \
   ./bin/mojify export --overwrite --width 320 "${synthetic_source}" "${export_dir}/unsupported-frame.webp"
 expect_export_failure \
   "duration-single-frame" \
+  "export --duration is valid only for video and animated outputs" \
   ./bin/mojify export --overwrite --width 320 --duration 1s "${synthetic_source}" "${export_dir}/duration-frame.png"
 expect_export_failure \
   "still-source-at" \
+  "export --at is not valid for still image sources" \
   ./bin/mojify export --overwrite --width 320 --at 0s "${still_source}" "${export_dir}/still-source-at.png"
 expect_export_failure \
   "still-source-duration" \
-  ./bin/mojify export --overwrite --width 320 --duration 1s "${still_source}" "${export_dir}/still-source-duration.png"
+  "export --duration is not valid for still image sources" \
+  ./bin/mojify export --overwrite --width 320 --duration 1s "${still_source}" "${export_dir}/still-source-duration.mp4"
 expect_export_failure \
   "still-source-mp4" \
+  "still image sources can only export single-frame outputs" \
   ./bin/mojify export --overwrite --width 320 "${still_source}" "${export_dir}/still-source-output.mp4"
 
 real_source=""

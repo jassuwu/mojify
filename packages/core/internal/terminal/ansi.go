@@ -36,10 +36,15 @@ func SerializeFrame(frame render.CharacterFrame) string {
 	for y := 0; y < frame.Height; y++ {
 		for x := 0; x < frame.Width; x++ {
 			cell := frame.Cells[y*frame.Width+x]
-			if !hasColor || cell.R != lastR || cell.G != lastG || cell.B != lastB {
-				fmt.Fprintf(&b, "\x1b[38;2;%d;%d;%dm", cell.R, cell.G, cell.B)
-				lastR, lastG, lastB = cell.R, cell.G, cell.B
-				hasColor = true
+			if cell.HasColor {
+				if !hasColor || cell.R != lastR || cell.G != lastG || cell.B != lastB {
+					fmt.Fprintf(&b, "\x1b[38;2;%d;%d;%dm", cell.R, cell.G, cell.B)
+					lastR, lastG, lastB = cell.R, cell.G, cell.B
+					hasColor = true
+				}
+			} else if hasColor {
+				b.WriteString("\x1b[39m")
+				hasColor = false
 			}
 			b.WriteRune(cell.Ch)
 		}
@@ -64,6 +69,7 @@ func SerializeFramePatch(previous, current render.CharacterFrame) (string, error
 	}
 
 	var b strings.Builder
+	var foreground foregroundState
 	for y := 0; y < current.Height; y++ {
 		x := 0
 		for x < current.Width {
@@ -83,7 +89,7 @@ func SerializeFramePatch(previous, current render.CharacterFrame) (string, error
 			}
 
 			b.WriteString(CursorPosition(y+1, startX+1))
-			writeColoredRun(&b, current.Cells[y*current.Width+startX:y*current.Width+x])
+			writeColoredRun(&b, current.Cells[y*current.Width+startX:y*current.Width+x], &foreground)
 		}
 	}
 
@@ -102,17 +108,32 @@ func validateCharacterFrame(frame render.CharacterFrame) error {
 }
 
 func sameCell(a, b render.Cell) bool {
-	return a.Ch == b.Ch && a.R == b.R && a.G == b.G && a.B == b.B
+	if a.Ch != b.Ch || a.HasColor != b.HasColor {
+		return false
+	}
+	if !a.HasColor {
+		return true
+	}
+	return a.R == b.R && a.G == b.G && a.B == b.B
 }
 
-func writeColoredRun(b *strings.Builder, cells []render.Cell) {
-	var lastR, lastG, lastB uint8
-	hasColor := false
+type foregroundState struct {
+	hasColor     bool
+	lastR, lastG uint8
+	lastB        uint8
+}
+
+func writeColoredRun(b *strings.Builder, cells []render.Cell, foreground *foregroundState) {
 	for _, cell := range cells {
-		if !hasColor || cell.R != lastR || cell.G != lastG || cell.B != lastB {
-			fmt.Fprintf(b, "\x1b[38;2;%d;%d;%dm", cell.R, cell.G, cell.B)
-			lastR, lastG, lastB = cell.R, cell.G, cell.B
-			hasColor = true
+		if cell.HasColor {
+			if !foreground.hasColor || cell.R != foreground.lastR || cell.G != foreground.lastG || cell.B != foreground.lastB {
+				fmt.Fprintf(b, "\x1b[38;2;%d;%d;%dm", cell.R, cell.G, cell.B)
+				foreground.lastR, foreground.lastG, foreground.lastB = cell.R, cell.G, cell.B
+				foreground.hasColor = true
+			}
+		} else if foreground.hasColor {
+			b.WriteString("\x1b[39m")
+			foreground.hasColor = false
 		}
 		b.WriteRune(cell.Ch)
 	}

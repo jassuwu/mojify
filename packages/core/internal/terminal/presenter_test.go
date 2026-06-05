@@ -25,7 +25,7 @@ func TestPresenterLifecycleWritesTerminalSequences(t *testing.T) {
 	frame := render.CharacterFrame{
 		Width:  1,
 		Height: 1,
-		Cells:  []render.Cell{{Ch: 'A', R: 1, G: 2, B: 3}},
+		Cells:  []render.Cell{{Ch: 'A', HasColor: true, R: 1, G: 2, B: 3}},
 	}
 	if err := presenter.Present(frame); err != nil {
 		t.Fatalf("Present returned error: %v", err)
@@ -64,8 +64,8 @@ func TestPresenterRecordsPlaybackMetrics(t *testing.T) {
 		Width:  2,
 		Height: 1,
 		Cells: []render.Cell{
-			{Ch: 'A', R: 255, G: 0, B: 0},
-			{Ch: 'B', R: 0, G: 255, B: 0},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'B', HasColor: true, R: 0, G: 255, B: 0},
 		},
 	}
 
@@ -88,7 +88,7 @@ func TestPresenterDoesNotRecordPresentedFrameOnWriteError(t *testing.T) {
 	frame := render.CharacterFrame{
 		Width:  1,
 		Height: 1,
-		Cells:  []render.Cell{{Ch: 'A', R: 255, G: 0, B: 0}},
+		Cells:  []render.Cell{{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0}},
 	}
 
 	if err := presenter.Present(frame); err == nil {
@@ -111,16 +111,16 @@ func TestPresenterUsesDiffPatchAfterFirstFrame(t *testing.T) {
 		Width:  2,
 		Height: 1,
 		Cells: []render.Cell{
-			{Ch: 'A', R: 255, G: 0, B: 0},
-			{Ch: 'B', R: 0, G: 255, B: 0},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'B', HasColor: true, R: 0, G: 255, B: 0},
 		},
 	}
 	second := render.CharacterFrame{
 		Width:  2,
 		Height: 1,
 		Cells: []render.Cell{
-			{Ch: 'A', R: 255, G: 0, B: 0},
-			{Ch: 'C', R: 0, G: 0, B: 255},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'C', HasColor: true, R: 0, G: 0, B: 255},
 		},
 	}
 
@@ -152,7 +152,7 @@ func TestPresenterNoopsIdenticalFrameAndRecordsZeroBytes(t *testing.T) {
 	frame := render.CharacterFrame{
 		Width:  1,
 		Height: 1,
-		Cells:  []render.Cell{{Ch: 'A', R: 255, G: 0, B: 0}},
+		Cells:  []render.Cell{{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0}},
 	}
 
 	if err := presenter.Present(frame); err != nil {
@@ -184,20 +184,20 @@ func TestPresenterFallsBackToFullRedrawWhenPatchIsLarger(t *testing.T) {
 		Width:  2,
 		Height: 2,
 		Cells: []render.Cell{
-			{Ch: 'A', R: 255, G: 0, B: 0},
-			{Ch: 'A', R: 255, G: 0, B: 0},
-			{Ch: 'A', R: 255, G: 0, B: 0},
-			{Ch: 'A', R: 255, G: 0, B: 0},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
 		},
 	}
 	second := render.CharacterFrame{
 		Width:  2,
 		Height: 2,
 		Cells: []render.Cell{
-			{Ch: 'B', R: 255, G: 0, B: 0},
-			{Ch: 'B', R: 255, G: 0, B: 0},
-			{Ch: 'B', R: 255, G: 0, B: 0},
-			{Ch: 'B', R: 255, G: 0, B: 0},
+			{Ch: 'B', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'B', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'B', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'B', HasColor: true, R: 255, G: 0, B: 0},
 		},
 	}
 
@@ -223,21 +223,21 @@ func TestPresenterRejectsInvalidFrameAndForcesNextFullRedraw(t *testing.T) {
 		Width:  2,
 		Height: 1,
 		Cells: []render.Cell{
-			{Ch: 'A', R: 255, G: 0, B: 0},
-			{Ch: 'B', R: 0, G: 255, B: 0},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'B', HasColor: true, R: 0, G: 255, B: 0},
 		},
 	}
 	invalid := render.CharacterFrame{
 		Width:  2,
 		Height: 1,
-		Cells:  []render.Cell{{Ch: 'C', R: 0, G: 0, B: 255}},
+		Cells:  []render.Cell{{Ch: 'C', HasColor: true, R: 0, G: 0, B: 255}},
 	}
 	next := render.CharacterFrame{
 		Width:  2,
 		Height: 1,
 		Cells: []render.Cell{
-			{Ch: 'A', R: 255, G: 0, B: 0},
-			{Ch: 'D', R: 0, G: 0, B: 255},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'D', HasColor: true, R: 0, G: 0, B: 255},
 		},
 	}
 
@@ -271,24 +271,24 @@ func TestPresenterWriteErrorForcesNextFullRedraw(t *testing.T) {
 		Width:  2,
 		Height: 1,
 		Cells: []render.Cell{
-			{Ch: 'A', R: 255, G: 0, B: 0},
-			{Ch: 'B', R: 0, G: 255, B: 0},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'B', HasColor: true, R: 0, G: 255, B: 0},
 		},
 	}
 	second := render.CharacterFrame{
 		Width:  2,
 		Height: 1,
 		Cells: []render.Cell{
-			{Ch: 'A', R: 255, G: 0, B: 0},
-			{Ch: 'C', R: 0, G: 0, B: 255},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'C', HasColor: true, R: 0, G: 0, B: 255},
 		},
 	}
 	third := render.CharacterFrame{
 		Width:  2,
 		Height: 1,
 		Cells: []render.Cell{
-			{Ch: 'A', R: 255, G: 0, B: 0},
-			{Ch: 'D', R: 0, G: 0, B: 255},
+			{Ch: 'A', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 'D', HasColor: true, R: 0, G: 0, B: 255},
 		},
 	}
 

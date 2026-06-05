@@ -12,8 +12,8 @@ func TestSerializeFrameUsesCursorHomeAndTruecolor(t *testing.T) {
 		Width:  2,
 		Height: 1,
 		Cells: []render.Cell{
-			{Ch: 'A', R: 1, G: 2, B: 3},
-			{Ch: 'B', R: 4, G: 5, B: 6},
+			{Ch: 'A', HasColor: true, R: 1, G: 2, B: 3},
+			{Ch: 'B', HasColor: true, R: 4, G: 5, B: 6},
 		},
 	}
 	out := SerializeFrame(frame)
@@ -29,10 +29,10 @@ func TestSerializeFrameUsesDeterministicRowsAndSuppressesRepeatedColor(t *testin
 		Width:  2,
 		Height: 2,
 		Cells: []render.Cell{
-			{Ch: 'A', R: 1, G: 2, B: 3},
-			{Ch: 'B', R: 1, G: 2, B: 3},
-			{Ch: 'C', R: 4, G: 5, B: 6},
-			{Ch: 'D', R: 4, G: 5, B: 6},
+			{Ch: 'A', HasColor: true, R: 1, G: 2, B: 3},
+			{Ch: 'B', HasColor: true, R: 1, G: 2, B: 3},
+			{Ch: 'C', HasColor: true, R: 4, G: 5, B: 6},
+			{Ch: 'D', HasColor: true, R: 4, G: 5, B: 6},
 		},
 	}
 	got := SerializeFrame(frame)
@@ -50,24 +50,24 @@ func TestCursorPositionUsesOneBasedCoordinates(t *testing.T) {
 
 func TestSerializeFramePatchWritesChangedRuns(t *testing.T) {
 	previous := characterFrame(4, 2,
-		render.Cell{Ch: 'A', R: 1, G: 1, B: 1},
-		render.Cell{Ch: 'A', R: 1, G: 1, B: 1},
-		render.Cell{Ch: 'A', R: 1, G: 1, B: 1},
-		render.Cell{Ch: 'A', R: 1, G: 1, B: 1},
-		render.Cell{Ch: 'X', R: 2, G: 2, B: 2},
-		render.Cell{Ch: 'X', R: 2, G: 2, B: 2},
-		render.Cell{Ch: 'X', R: 2, G: 2, B: 2},
-		render.Cell{Ch: 'X', R: 2, G: 2, B: 2},
+		render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'X', HasColor: true, R: 2, G: 2, B: 2},
+		render.Cell{Ch: 'X', HasColor: true, R: 2, G: 2, B: 2},
+		render.Cell{Ch: 'X', HasColor: true, R: 2, G: 2, B: 2},
+		render.Cell{Ch: 'X', HasColor: true, R: 2, G: 2, B: 2},
 	)
 	current := characterFrame(4, 2,
-		render.Cell{Ch: 'A', R: 1, G: 1, B: 1},
-		render.Cell{Ch: 'B', R: 9, G: 9, B: 9},
-		render.Cell{Ch: 'C', R: 9, G: 9, B: 9},
-		render.Cell{Ch: 'A', R: 1, G: 1, B: 1},
-		render.Cell{Ch: 'X', R: 2, G: 2, B: 2},
-		render.Cell{Ch: 'X', R: 2, G: 2, B: 2},
-		render.Cell{Ch: 'X', R: 2, G: 2, B: 2},
-		render.Cell{Ch: 'Z', R: 3, G: 4, B: 5},
+		render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'B', HasColor: true, R: 9, G: 9, B: 9},
+		render.Cell{Ch: 'C', HasColor: true, R: 9, G: 9, B: 9},
+		render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'X', HasColor: true, R: 2, G: 2, B: 2},
+		render.Cell{Ch: 'X', HasColor: true, R: 2, G: 2, B: 2},
+		render.Cell{Ch: 'X', HasColor: true, R: 2, G: 2, B: 2},
+		render.Cell{Ch: 'Z', HasColor: true, R: 3, G: 4, B: 5},
 	)
 
 	got, err := SerializeFramePatch(previous, current)
@@ -87,12 +87,12 @@ func TestSerializeFramePatchWritesChangedRuns(t *testing.T) {
 
 func TestSerializeFramePatchReturnsEmptyForIdenticalFrames(t *testing.T) {
 	previous := characterFrame(2, 1,
-		render.Cell{Ch: 'A', R: 1, G: 1, B: 1},
-		render.Cell{Ch: 'B', R: 2, G: 2, B: 2},
+		render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'B', HasColor: true, R: 2, G: 2, B: 2},
 	)
 	current := characterFrame(2, 1,
-		render.Cell{Ch: 'A', R: 1, G: 1, B: 1},
-		render.Cell{Ch: 'B', R: 2, G: 2, B: 2},
+		render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'B', HasColor: true, R: 2, G: 2, B: 2},
 	)
 
 	got, err := SerializeFramePatch(previous, current)
@@ -105,8 +105,8 @@ func TestSerializeFramePatchReturnsEmptyForIdenticalFrames(t *testing.T) {
 }
 
 func TestSerializeFramePatchTreatsColorOnlyChangeAsChanged(t *testing.T) {
-	previous := characterFrame(1, 1, render.Cell{Ch: 'A', R: 1, G: 1, B: 1})
-	current := characterFrame(1, 1, render.Cell{Ch: 'A', R: 2, G: 3, B: 4})
+	previous := characterFrame(1, 1, render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1})
+	current := characterFrame(1, 1, render.Cell{Ch: 'A', HasColor: true, R: 2, G: 3, B: 4})
 
 	got, err := SerializeFramePatch(previous, current)
 	if err != nil {
@@ -119,11 +119,48 @@ func TestSerializeFramePatchTreatsColorOnlyChangeAsChanged(t *testing.T) {
 	}
 }
 
+func TestSerializeFramePatchResetsColorBeforeLaterNoColorRun(t *testing.T) {
+	previous := characterFrame(3, 1,
+		render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'B', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'C', HasColor: true, R: 1, G: 1, B: 1},
+	)
+	current := characterFrame(3, 1,
+		render.Cell{Ch: 'X', HasColor: true, R: 255, G: 0, B: 0},
+		render.Cell{Ch: 'B', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'Y', HasColor: false},
+	)
+
+	got, err := SerializeFramePatch(previous, current)
+	if err != nil {
+		t.Fatalf("SerializeFramePatch() unexpected error: %v", err)
+	}
+
+	want := CursorPosition(1, 1) + "\x1b[38;2;255;0;0mX" +
+		CursorPosition(1, 3) + "\x1b[39mY" + Reset
+	if got != want {
+		t.Fatalf("SerializeFramePatch() = %q, want %q", got, want)
+	}
+}
+
+func TestSerializeFramePatchIgnoresStaleRGBForNoColorCells(t *testing.T) {
+	previous := characterFrame(1, 1, render.Cell{Ch: 'A', HasColor: false, R: 1, G: 2, B: 3})
+	current := characterFrame(1, 1, render.Cell{Ch: 'A', HasColor: false, R: 9, G: 8, B: 7})
+
+	got, err := SerializeFramePatch(previous, current)
+	if err != nil {
+		t.Fatalf("SerializeFramePatch() unexpected error: %v", err)
+	}
+	if got != "" {
+		t.Fatalf("SerializeFramePatch() = %q, want empty string", got)
+	}
+}
+
 func TestSerializeFramePatchRejectsMismatchedDimensions(t *testing.T) {
-	previous := characterFrame(1, 1, render.Cell{Ch: 'A', R: 1, G: 1, B: 1})
+	previous := characterFrame(1, 1, render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1})
 	current := characterFrame(2, 1,
-		render.Cell{Ch: 'A', R: 1, G: 1, B: 1},
-		render.Cell{Ch: 'A', R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1},
+		render.Cell{Ch: 'A', HasColor: true, R: 1, G: 1, B: 1},
 	)
 
 	_, err := SerializeFramePatch(previous, current)
@@ -132,6 +169,25 @@ func TestSerializeFramePatchRejectsMismatchedDimensions(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "frame dimensions differ") {
 		t.Fatalf("SerializeFramePatch() error = %q, want frame dimensions differ", err)
+	}
+}
+
+func TestSerializeFrameSkipsColorForNoColorCells(t *testing.T) {
+	frame := render.CharacterFrame{
+		Width:  2,
+		Height: 1,
+		Cells: []render.Cell{
+			{Ch: '@', HasColor: false},
+			{Ch: '#', HasColor: true, R: 255, G: 0, B: 0},
+		},
+	}
+
+	got := SerializeFrame(frame)
+	if strings.Contains(got, "\x1b[38;2;0;0;0m@") {
+		t.Fatalf("SerializeFrame emitted black color for no-color cell: %q", got)
+	}
+	if !strings.Contains(got, "@\x1b[38;2;255;0;0m#") {
+		t.Fatalf("SerializeFrame = %q, want uncolored @ followed by red #", got)
 	}
 }
 

@@ -7,8 +7,9 @@ type RGBFrame struct {
 }
 
 type Cell struct {
-	Ch      rune
-	R, G, B uint8
+	Ch       rune
+	HasColor bool
+	R, G, B  uint8
 }
 
 type CharacterFrame struct {

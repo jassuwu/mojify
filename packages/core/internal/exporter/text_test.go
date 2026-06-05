@@ -35,8 +35,8 @@ func TestSerializeTextFrameWritesANSIForegroundEscapesAndFinalReset(t *testing.T
 		Width:  2,
 		Height: 1,
 		Cells: []render.Cell{
-			{Ch: 'R', R: 255, G: 0, B: 0},
-			{Ch: 0, R: 0, G: 128, B: 255},
+			{Ch: 'R', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: 0, HasColor: true, R: 0, G: 128, B: 255},
 		},
 	}
 
@@ -51,6 +51,25 @@ func TestSerializeTextFrameWritesANSIForegroundEscapesAndFinalReset(t *testing.T
 	}
 	if !strings.HasSuffix(got, "\x1b[0m\n") {
 		t.Fatalf("SerializeTextFrame() does not end with reset/newline: %q", got)
+	}
+}
+
+func TestSerializeANSITextFrameSkipsNoColorCells(t *testing.T) {
+	frame := render.CharacterFrame{
+		Width:  2,
+		Height: 1,
+		Cells: []render.Cell{
+			{Ch: '@', HasColor: false},
+			{Ch: '#', HasColor: true, R: 0, G: 255, B: 0},
+		},
+	}
+
+	got := serializeANSITextFrame(frame)
+	if strings.Contains(got, "\x1b[38;2;0;0;0m@") {
+		t.Fatalf("serializeANSITextFrame emitted black color for no-color cell: %q", got)
+	}
+	if !strings.Contains(got, "@\x1b[38;2;0;255;0m#") {
+		t.Fatalf("serializeANSITextFrame = %q, want uncolored @ followed by green #", got)
 	}
 }
 

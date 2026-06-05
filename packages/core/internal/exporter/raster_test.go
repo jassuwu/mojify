@@ -18,8 +18,8 @@ func TestRasterizerDrawsCellForegroundIntoRGBBuffer(t *testing.T) {
 		Width:  2,
 		Height: 1,
 		Cells: []render.Cell{
-			{Ch: '@', R: 255, G: 0, B: 0},
-			{Ch: '@', R: 0, G: 255, B: 0},
+			{Ch: '@', HasColor: true, R: 255, G: 0, B: 0},
+			{Ch: '@', HasColor: true, R: 0, G: 255, B: 0},
 		},
 	}
 
@@ -40,6 +40,29 @@ func TestRasterizerDrawsCellForegroundIntoRGBBuffer(t *testing.T) {
 	}
 	if r, g, b := pixelAt(rgb, layout.OutputWidth, 7, 0); r != defaultBackground.R || g != defaultBackground.G || b != defaultBackground.B {
 		t.Fatalf("background pixel = rgb(%d,%d,%d), want rgb(%d,%d,%d)", r, g, b, defaultBackground.R, defaultBackground.G, defaultBackground.B)
+	}
+}
+
+func TestRasterizerDrawsNoColorCellAsWhite(t *testing.T) {
+	rasterizer := NewRasterizer(basicfont.Face7x13)
+	frame := render.CharacterFrame{
+		Width:  1,
+		Height: 1,
+		Cells:  []render.Cell{{Ch: '@', HasColor: false}},
+	}
+	layout := Layout{
+		OutputWidth:  ExportCellWidth,
+		OutputHeight: ExportCellHeight,
+		Grid:         render.Grid{Cols: 1, Rows: 1},
+		FPS:          24,
+	}
+
+	raw, err := rasterizer.Rasterize(frame, layout)
+	if err != nil {
+		t.Fatalf("Rasterize returned error: %v", err)
+	}
+	if !cellContainsRGB(raw, layout.OutputWidth, 0, 0, 255, 255, 255) {
+		t.Fatal("no-color cell does not contain white glyph pixels")
 	}
 }
 

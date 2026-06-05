@@ -16,6 +16,7 @@ type CommandKind int
 const (
 	HelpCommand CommandKind = iota
 	VersionCommand
+	DoctorCommand
 	PlayCommand
 	ProbeCommand
 	ExportCommand
@@ -53,6 +54,11 @@ func Parse(args []string) (Command, error) {
 		return Command{Kind: HelpCommand}, nil
 	case "--version", "version":
 		return Command{Kind: VersionCommand}, nil
+	case "doctor":
+		if len(args) != 1 {
+			return Command{}, fmt.Errorf("doctor accepts no arguments or options")
+		}
+		return Command{Kind: DoctorCommand}, nil
 	case "play":
 		return parseInputCommand(PlayCommand, args)
 	case "probe":
@@ -75,6 +81,7 @@ Usage:
   mojify probe <source>                                 Print source media and render metadata
   mojify export [options] <source> <output>             Export Mojify output to a supported file format
   mojify --version                                      Print the installed Mojify version
+  mojify doctor                                         Check runtime dependency health
   mojify --help                                         Show this help
 
 Source:

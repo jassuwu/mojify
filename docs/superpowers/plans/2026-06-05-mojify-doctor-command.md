@@ -41,7 +41,7 @@
 **Files:**
 - Create: `packages/core/internal/doctor/doctor_test.go`
 
-- [ ] **Step 1: Write failing doctor package tests**
+- [x] **Step 1: Write failing doctor package tests**
 
 Create `packages/core/internal/doctor/doctor_test.go`:
 
@@ -199,7 +199,7 @@ func assertResult(t *testing.T, report Report, name string, status Status, versi
 }
 ```
 
-- [ ] **Step 2: Run doctor package tests to verify they fail**
+- [x] **Step 2: Run doctor package tests to verify they fail**
 
 Run:
 
@@ -215,7 +215,7 @@ Expected: FAIL because `packages/core/internal/doctor` has no implementation pac
 - Create: `packages/core/internal/doctor/doctor.go`
 - Test: `packages/core/internal/doctor/doctor_test.go`
 
-- [ ] **Step 1: Implement doctor package**
+- [x] **Step 1: Implement doctor package**
 
 Create `packages/core/internal/doctor/doctor.go`:
 
@@ -447,7 +447,7 @@ func execRunner(ctx context.Context, name string, args ...string) ([]byte, []byt
 }
 ```
 
-- [ ] **Step 2: Run doctor package tests**
+- [x] **Step 2: Run doctor package tests**
 
 Run:
 
@@ -457,7 +457,7 @@ go test ./packages/core/internal/doctor
 
 Expected: PASS.
 
-- [ ] **Step 3: Commit doctor package**
+- [x] **Step 3: Commit doctor package**
 
 ```bash
 git add packages/core/internal/doctor/doctor.go packages/core/internal/doctor/doctor_test.go
@@ -470,7 +470,7 @@ git commit --no-gpg-sign -m "feat: add runtime doctor checks"
 - Modify: `packages/core/internal/cli/cli.go`
 - Modify: `packages/core/internal/cli/cli_test.go`
 
-- [ ] **Step 1: Add failing parser/help tests**
+- [x] **Step 1: Add failing parser/help tests**
 
 In `packages/core/internal/cli/cli_test.go`, add these tests after `TestParseVersionCommands`:
 
@@ -509,7 +509,7 @@ In `TestHelpTextMentionsCommands`, add these expected substrings:
 "Check runtime dependency health",
 ```
 
-- [ ] **Step 2: Run parser tests to verify they fail**
+- [x] **Step 2: Run parser tests to verify they fail**
 
 Run:
 
@@ -519,7 +519,7 @@ go test ./packages/core/internal/cli -run 'TestParseDoctor|TestHelpTextMentionsC
 
 Expected: FAIL because `DoctorCommand` and parser/help wiring do not exist.
 
-- [ ] **Step 3: Implement parser and help support**
+- [x] **Step 3: Implement parser and help support**
 
 In `packages/core/internal/cli/cli.go`, add `DoctorCommand` to the command enum:
 
@@ -552,7 +552,7 @@ In `HelpText`, add the doctor usage row between version/export and help:
 
 Keep the requirements section unchanged in this task.
 
-- [ ] **Step 4: Run parser/help tests**
+- [x] **Step 4: Run parser/help tests**
 
 Run:
 
@@ -562,7 +562,7 @@ go test ./packages/core/internal/cli -run 'TestParseDoctor|TestHelpTextMentionsC
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit parser/help support**
+- [x] **Step 5: Commit parser/help support**
 
 ```bash
 git add packages/core/internal/cli/cli.go packages/core/internal/cli/cli_test.go
@@ -576,7 +576,7 @@ git commit --no-gpg-sign -m "feat: parse doctor command"
 - Create: `packages/core/internal/cli/doctor_test.go`
 - Modify: `packages/core/cmd/mojify/main.go`
 
-- [ ] **Step 1: Write failing CLI runner tests**
+- [x] **Step 1: Write failing CLI runner tests**
 
 Create `packages/core/internal/cli/doctor_test.go`:
 
@@ -656,7 +656,7 @@ func TestRunDoctorFailsForRequiredErrors(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run CLI doctor tests to verify they fail**
+- [x] **Step 2: Run CLI doctor tests to verify they fail**
 
 Run:
 
@@ -666,7 +666,7 @@ go test ./packages/core/internal/cli -run TestRunDoctor
 
 Expected: FAIL because `runDoctorWithOptions` does not exist.
 
-- [ ] **Step 3: Implement CLI doctor runner**
+- [x] **Step 3: Implement CLI doctor runner**
 
 Create `packages/core/internal/cli/doctor.go`:
 
@@ -695,7 +695,7 @@ func runDoctorWithOptions(ctx context.Context, stdout io.Writer, options doctor.
 }
 ```
 
-- [ ] **Step 4: Wire main dispatch**
+- [x] **Step 4: Wire main dispatch**
 
 In `packages/core/cmd/mojify/main.go`, add this switch case after `VersionCommand`:
 
@@ -709,7 +709,7 @@ In `packages/core/cmd/mojify/main.go`, add this switch case after `VersionComman
 		}
 ```
 
-- [ ] **Step 5: Run CLI and command tests**
+- [x] **Step 5: Run CLI and command tests**
 
 Run:
 
@@ -719,7 +719,7 @@ go test ./packages/core/internal/cli ./packages/core/cmd/mojify
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit doctor runner and dispatch**
+- [x] **Step 6: Commit doctor runner and dispatch**
 
 ```bash
 git add packages/core/internal/cli/doctor.go packages/core/internal/cli/doctor_test.go packages/core/cmd/mojify/main.go
@@ -734,7 +734,7 @@ git commit --no-gpg-sign -m "feat: run doctor command"
 - Modify: `README.md`
 - Modify: `docs/release.md`
 
-- [ ] **Step 1: Add ADR**
+- [x] **Step 1: Add ADR**
 
 Create `docs/adr/0030-add-runtime-doctor-command.md`:
 
@@ -748,7 +748,7 @@ The doctor command checks `ffmpeg`, `ffprobe`, `ffplay`, and `yt-dlp` on `PATH`.
 Doctor does not install dependencies, run network checks, download sample media, check audio devices, probe terminal capabilities, or produce machine-readable diagnostics in this stage.
 ```
 
-- [ ] **Step 2: Add glossary entry**
+- [x] **Step 2: Add glossary entry**
 
 In `CONTEXT.md`, add this entry after `Runtime dependency hint`:
 
@@ -758,7 +758,7 @@ The `mojify doctor` CLI command that checks whether external runtime tools are a
 _Avoid_: Dependency installer, Homebrew repair command, network smoke test
 ```
 
-- [ ] **Step 3: Update README**
+- [x] **Step 3: Update README**
 
 In `README.md`, after the tarball install paragraph, add:
 
@@ -794,7 +794,7 @@ In the `Roadmap` list, remove:
 - npm/npx wrapper around the native binary
 ```
 
-- [ ] **Step 4: Update release runbook**
+- [x] **Step 4: Update release runbook**
 
 In `docs/release.md`, under `Local Snapshot QA`, after `bun run build`, add:
 
@@ -808,7 +808,7 @@ Under `Release Smoke Test`, after `mojify --version`, add:
 mojify doctor
 ```
 
-- [ ] **Step 5: Run docs diff check**
+- [x] **Step 5: Run docs diff check**
 
 Run:
 
@@ -818,7 +818,7 @@ git diff --check
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit docs**
+- [x] **Step 6: Commit docs**
 
 ```bash
 git add docs/adr/0030-add-runtime-doctor-command.md CONTEXT.md README.md docs/release.md
@@ -831,7 +831,7 @@ git commit --no-gpg-sign -m "docs: document doctor command"
 - All files changed in previous tasks
 - Modify: `docs/superpowers/plans/2026-06-05-mojify-doctor-command.md`
 
-- [ ] **Step 1: Run formatting**
+- [x] **Step 1: Run formatting**
 
 Run:
 
@@ -841,7 +841,7 @@ bun run fmt:check
 
 Expected: PASS.
 
-- [ ] **Step 2: Run Go tests**
+- [x] **Step 2: Run Go tests**
 
 Run:
 
@@ -851,7 +851,7 @@ GOCACHE=/private/tmp/mojify-gocache go test -count=1 ./...
 
 Expected: PASS.
 
-- [ ] **Step 3: Run repo tests**
+- [x] **Step 3: Run repo tests**
 
 Run:
 
@@ -861,7 +861,7 @@ bun run test
 
 Expected: PASS.
 
-- [ ] **Step 4: Build binary**
+- [x] **Step 4: Build binary**
 
 Run:
 
@@ -871,7 +871,7 @@ bun run build
 
 Expected: PASS and `bin/mojify` exists.
 
-- [ ] **Step 5: Smoke-test doctor**
+- [x] **Step 5: Smoke-test doctor**
 
 Run:
 
@@ -881,7 +881,7 @@ Run:
 
 Expected: command prints one row each for `ffmpeg`, `ffprobe`, `ffplay`, and `yt-dlp`. Exit code may be non-zero on a host missing required tools, but on the normal development machine it should exit `0`.
 
-- [ ] **Step 6: Run final diff checks**
+- [x] **Step 6: Run final diff checks**
 
 Run:
 
@@ -892,7 +892,7 @@ git status -sb
 
 Expected: `git diff --check` passes. `git status -sb` shows only intentional modified files and this plan file if steps were checked off.
 
-- [ ] **Step 7: Commit finalized plan state**
+- [x] **Step 7: Commit finalized plan state**
 
 If this plan file was updated while executing checkboxes, commit it:
 

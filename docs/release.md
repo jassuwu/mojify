@@ -46,6 +46,7 @@ go test ./...
 bun run fmt:check
 bun run test
 bun run build
+./bin/mojify doctor
 ```
 
 Package release-shaped artifacts without publishing:
@@ -68,6 +69,7 @@ Smoke-test a generated binary:
 tmp_dir="$(mktemp -d)"
 tar -xzf dist/release-smoke/mojify_0.0.0-SNAPSHOT_darwin_arm64.tar.gz -C "$tmp_dir"
 "$tmp_dir/mojify" --version
+"$tmp_dir/mojify" doctor
 rm -rf "$tmp_dir"
 ```
 
@@ -117,6 +119,7 @@ brew update
 brew reinstall jassuwu/tap/mojify
 brew info jassuwu/tap/mojify
 mojify --version
+mojify doctor
 bun run qa:clips
 mojify probe ./dist/qa/low-motion-bars.mp4
 brew reinstall --build-from-source jassuwu/tap/mojify

@@ -216,6 +216,26 @@ _Avoid_: Auto-fit, live resize, terminal font-size changes
 The rules that turn pixels into characters, colors, and edge glyphs.
 _Avoid_: Formula, filter, converter
 
+**Recipe preset**:
+A built-in renderer recipe selected by name, giving users a controlled way to change Mojify's character-frame look by combining choices for character mapping, edge behavior, and color mode without loading custom recipe files or scripts.
+_Avoid_: Custom recipe, plugin, arbitrary renderer config
+
+**Default recipe preset**:
+Mojify's existing renderer recipe: luminance density mapping, source color, and edge glyph overrides.
+_Avoid_: Basic renderer, legacy mode, fallback preset
+
+**Mono recipe preset**:
+A built-in recipe preset that keeps Mojify's default luminance and edge behavior but disables source/ANSI color for copyable monochrome terminal art.
+_Avoid_: Grayscale truecolor, color desaturation, classic ASCII
+
+**ASCII recipe preset**:
+A built-in recipe preset that uses a plain ASCII luminance ramp with no source color and no edge glyph override.
+_Avoid_: Default recipe without color, edge-aware ASCII, Unicode art
+
+**Blocks recipe preset**:
+A built-in recipe preset that uses a Unicode shade/block luminance ramp with source color enabled and edge glyph overrides disabled.
+_Avoid_: Braille renderer, emoji recipe, classic ASCII
+
 **Golden renderer test**:
 A test fixture that locks expected character, color, and edge output for a small input frame.
 _Avoid_: Screenshot test, demo clip

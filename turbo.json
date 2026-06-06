@@ -9,6 +9,10 @@
       "cache": false,
       "persistent": true
     },
+    "preview": {
+      "cache": false,
+      "persistent": true
+    },
     "test": {
       "cache": false,
       "outputs": []

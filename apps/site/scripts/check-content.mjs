@@ -7,9 +7,11 @@
 // every command in the static HTML against the single source of truth, and
 // (2) validate the ENTIRE command set in commands.ts is clean (covers the
 // client-rendered variants too).
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { ALL_RAW } from "../src/lib/commands.ts";
+
+const distFile = (p) => fileURLToPath(new URL("../dist" + p, import.meta.url));
 
 const html = readFileSync(
   fileURLToPath(new URL("../dist/index.html", import.meta.url)),
@@ -86,6 +88,21 @@ const forbidden = [
 for (const [re, why] of forbidden) {
   const m = scrubbed.match(re);
   if (m) fails.push(`FORBIDDEN (${why}): matched ${JSON.stringify(m[0])}`);
+}
+
+// (4) social-card images referenced in <meta> must actually exist in the build.
+const imgRefs = [
+  ...html.matchAll(/(?:og:image|twitter:image)"\s+content="([^"]*)"/g),
+].map((m) => m[1]);
+for (const ref of new Set(imgRefs)) {
+  let path = ref;
+  try {
+    path = new URL(ref).pathname;
+  } catch {
+    /* already a path */
+  }
+  if (!existsSync(distFile(path)))
+    fails.push(`og/twitter image references a missing file: ${ref} (no dist${path})`);
 }
 
 if (fails.length) {

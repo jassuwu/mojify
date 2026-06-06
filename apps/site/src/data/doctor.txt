@@ -1,0 +1,8 @@
+mojify doctor
+
+ok    ffmpeg   8.1.1
+ok    ffprobe  8.1.1
+ok    ffplay   8.1.1
+ok    yt-dlp   2026.03.17
+
+Mojify can play and export local media, play live audio, and resolve platform URLs.

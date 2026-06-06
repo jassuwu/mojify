@@ -1,0 +1,4 @@
+input: dist/hmc.png
+image: 900x484
+audio: no
+render-grid: 120x32 (sample terminal 120x40)

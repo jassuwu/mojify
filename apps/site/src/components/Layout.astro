@@ -1,0 +1,84 @@
+---
+import "../styles/global.css";
+import EdgeBlur from "./EdgeBlur.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "mojify · turn media into text.",
+  description = "mojify plays videos in your terminal as colored text, and exports to video, gif, image, or text files. macOS and linux.",
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site).toString();
+const ogImage = new URL("/og.png", Astro.site).toString();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#080808" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="mojify - turn media into text" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link
+      rel="preload"
+      href="/fonts/jetbrains-mono-400.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/jetbrains-mono-800.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23080808'/%3E%3Ctext x='16' y='23' font-family='Arial Black,Arial' font-weight='900' font-size='20' fill='%237cffc6' text-anchor='middle'%3Em%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body class="min-h-screen text-offwhite antialiased">
+    {/* ambient: an abstract clip turned to character art by Mojify itself */}
+    <div class="bg-ambient" aria-hidden="true">
+      <video
+        class="bg-ambient__video"
+        data-lazy
+        preload="none"
+        muted
+        loop
+        playsinline
+        poster="/assets/bg/ambient-poster.webp"
+      >
+        <source data-src="/assets/bg/ambient.mp4" type="video/mp4" />
+      </video>
+      <div class="bg-ambient__veil"></div>
+    </div>
+    <slot />
+    <EdgeBlur />
+  </body>
+</html>

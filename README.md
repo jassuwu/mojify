@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Play videos live or export colored, edge-aware Mojify output as video, animated, still-image, or text files.
+  Play videos live or export colored, edge-aware Mojify output as a video, animated, still-image, or text file.
 </p>
 
 <p align="center">

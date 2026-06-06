@@ -1,0 +1,35 @@
+---
+// Progressive blur at the top and bottom edges of the viewport.
+// 8 stacked fixed layers per edge, each blurrier and masked to a sliding band,
+// so the blur ramps up toward the edge. Ported from jass.gg.
+const layers = [
+  { z: 1, px: "0.078125px" },
+  { z: 2, px: "0.15625px" },
+  { z: 3, px: "0.3125px" },
+  { z: 4, px: "0.625px" },
+  { z: 5, px: "1.25px" },
+  { z: 6, px: "2.5px" },
+  { z: 7, px: "5px" },
+  { z: 8, px: "10px" },
+];
+const blur = (px: string) => `backdrop-filter:blur(${px});-webkit-backdrop-filter:blur(${px})`;
+---
+
+<div aria-hidden="true">
+  {
+    layers.map((l) => (
+      <div
+        class={`blur-mask-${l.z} blur-top pointer-events-none fixed inset-x-0 top-0 h-14 md:h-24`}
+        style={`z-index:${l.z};${blur(l.px)}`}
+      />
+    ))
+  }
+  {
+    layers.map((l) => (
+      <div
+        class={`blur-mask-${l.z} pointer-events-none fixed inset-x-0 bottom-0 h-14 md:h-24`}
+        style={`z-index:${l.z};${blur(l.px)}`}
+      />
+    ))
+  }
+</div>

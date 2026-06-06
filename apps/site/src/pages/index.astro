@@ -1,0 +1,23 @@
+---
+import Layout from "../components/Layout.astro";
+import Nav from "../components/Nav.astro";
+import Hero from "../components/Hero.astro";
+import Demo from "../components/Demo.astro";
+import Close from "../components/Close.astro";
+import Footer from "../components/Footer.astro";
+---
+
+<Layout>
+  <Nav />
+  <main>
+    <Hero />
+    <Demo />
+    <Close />
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  import "../scripts/clipboard.ts";
+  import "../scripts/lazy-video.ts";
+</script>

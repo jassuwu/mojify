@@ -1,0 +1,34 @@
+{
+  "name": "@mojify/site",
+  "version": "1.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check",
+    "test": "bun test",
+    "check": "bun scripts/check-content.mjs",
+    "assets": "bash scripts/prepare-assets.sh",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/react": "5.0.7",
+    "@astrojs/sitemap": "3.7.3",
+    "@tailwindcss/vite": "4.3.0",
+    "astro": "5.18.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "tailwindcss": "4.3.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.9",
+    "@types/react": "19.2.16",
+    "@types/react-dom": "19.2.3",
+    "prettier": "3.8.3",
+    "prettier-plugin-astro": "0.14.1",
+    "typescript": "5.9.3"
+  }
+}

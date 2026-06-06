@@ -1,0 +1,356 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+   Mojify brand tokens - inherited verbatim from apps/readme-header.
+   See docs/superpowers/specs/2026-06-05-mojify-marketing-site-design.md §3.
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  --color-field: #080808;
+  --color-mint: #7cffc6;
+  --color-prompt: #8a99ad;
+  --color-offwhite: #e8f3ee;
+
+  /* surfaces derived from field */
+  --color-hairline: #161616;
+  --color-terminal-top: #1c1c1c;
+  --color-elevated: #0d0d0d;
+
+  --font-display:
+    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", monospace;
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* self-hosted JetBrains Mono (latin) - display + code; system mono fallback
+   covers rare glyphs (arrows, block elements) gracefully. */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-800.woff2") format("woff2");
+}
+
+/* ── ambient character-art background ───────────────────────── */
+.bg-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+}
+.bg-ambient__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.22;
+  filter: grayscale(1) contrast(1.2) brightness(1.05);
+}
+/* keep text readable: darken toward the field, strongest top + bottom */
+.bg-ambient__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      130% 90% at 50% 22%,
+      transparent 0%,
+      color-mix(in srgb, var(--color-field) 55%, transparent) 55%,
+      var(--color-field) 100%
+    ),
+    linear-gradient(
+      var(--color-field) 0%,
+      transparent 14%,
+      transparent 86%,
+      var(--color-field) 100%
+    );
+}
+@media (prefers-reduced-motion: reduce) {
+  .bg-ambient__video {
+    opacity: 0.06;
+  }
+}
+
+/* ── progressive edge-blur masks (ported from jass.gg) ──────── */
+.blur-mask-1 {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 12.5% 25%, transparent 37.5%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 12.5% 25%, transparent 37.5%);
+}
+.blur-mask-2 {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 12.5%, #000 25% 37.5%, transparent 50%);
+  mask-image: linear-gradient(to bottom, transparent 12.5%, #000 25% 37.5%, transparent 50%);
+}
+.blur-mask-3 {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 25%, #000 37.5% 50%, transparent 62.5%);
+  mask-image: linear-gradient(to bottom, transparent 25%, #000 37.5% 50%, transparent 62.5%);
+}
+.blur-mask-4 {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 37.5%, #000 50% 62.5%, transparent 75%);
+  mask-image: linear-gradient(to bottom, transparent 37.5%, #000 50% 62.5%, transparent 75%);
+}
+.blur-mask-5 {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 50%, #000 62.5% 75%, transparent 87.5%);
+  mask-image: linear-gradient(to bottom, transparent 50%, #000 62.5% 75%, transparent 87.5%);
+}
+.blur-mask-6 {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 62.5%, #000 75% 87.5%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 62.5%, #000 75% 87.5%, transparent 100%);
+}
+.blur-mask-7 {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 75%, #000 87.5%);
+  mask-image: linear-gradient(to bottom, transparent 75%, #000 87.5%);
+}
+.blur-mask-8 {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 87.5%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 87.5%, #000 100%);
+}
+.blur-mask-1.blur-top {
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 12.5% 25%, transparent 37.5%);
+  mask-image: linear-gradient(to top, transparent 0%, #000 12.5% 25%, transparent 37.5%);
+}
+.blur-mask-2.blur-top {
+  -webkit-mask-image: linear-gradient(to top, transparent 12.5%, #000 25% 37.5%, transparent 50%);
+  mask-image: linear-gradient(to top, transparent 12.5%, #000 25% 37.5%, transparent 50%);
+}
+.blur-mask-3.blur-top {
+  -webkit-mask-image: linear-gradient(to top, transparent 25%, #000 37.5% 50%, transparent 62.5%);
+  mask-image: linear-gradient(to top, transparent 25%, #000 37.5% 50%, transparent 62.5%);
+}
+.blur-mask-4.blur-top {
+  -webkit-mask-image: linear-gradient(to top, transparent 37.5%, #000 50% 62.5%, transparent 75%);
+  mask-image: linear-gradient(to top, transparent 37.5%, #000 50% 62.5%, transparent 75%);
+}
+.blur-mask-5.blur-top {
+  -webkit-mask-image: linear-gradient(to top, transparent 50%, #000 62.5% 75%, transparent 87.5%);
+  mask-image: linear-gradient(to top, transparent 50%, #000 62.5% 75%, transparent 87.5%);
+}
+.blur-mask-6.blur-top {
+  -webkit-mask-image: linear-gradient(to top, transparent 62.5%, #000 75% 87.5%, transparent 100%);
+  mask-image: linear-gradient(to top, transparent 62.5%, #000 75% 87.5%, transparent 100%);
+}
+.blur-mask-7.blur-top {
+  -webkit-mask-image: linear-gradient(to top, transparent 75%, #000 87.5%);
+  mask-image: linear-gradient(to top, transparent 75%, #000 87.5%);
+}
+.blur-mask-8.blur-top {
+  -webkit-mask-image: linear-gradient(to top, transparent 87.5%, #000 100%);
+  mask-image: linear-gradient(to top, transparent 87.5%, #000 100%);
+}
+
+/* ── base ───────────────────────────────────────────────────── */
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background-color: var(--color-field);
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  scrollbar-color: #2a2a2a var(--color-field);
+}
+
+body {
+  /* transparent so the fixed .bg-ambient layer shows through; field lives on html */
+  color: var(--color-offwhite);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--color-mint) 26%, transparent);
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-mint);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ── type scale (spec §3.2) ─────────────────────────────────── */
+@layer components {
+  .t-display-xl {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(52px, 9vw, 120px);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .t-display-l {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(32px, 5vw, 68px);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+  }
+  .t-tagline {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(21px, 3.2vw, 40px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .t-body {
+    font-family: var(--font-sans);
+    font-size: clamp(16px, 1.35vw, 20px);
+    line-height: 1.55;
+  }
+  .t-mono-cmd {
+    font-family: var(--font-mono);
+    font-size: clamp(14px, 1.15vw, 17px);
+    letter-spacing: 0.01em;
+  }
+  .t-mono {
+    font-family: var(--font-mono);
+    font-size: clamp(13px, 1vw, 15px);
+    letter-spacing: 0.01em;
+  }
+  .t-mono-grid {
+    font-family: var(--font-mono);
+    font-size: clamp(10px, 0.82vw, 13px);
+    line-height: 1.04;
+    letter-spacing: 0;
+  }
+  .t-caption {
+    font-family: var(--font-mono);
+    font-size: clamp(12px, 0.92vw, 13.5px);
+    line-height: 1.5;
+    color: var(--color-prompt);
+  }
+}
+
+/* ── motifs (spec §3.4) ─────────────────────────────────────── */
+@layer components {
+  /* mint block caret */
+  .caret {
+    display: inline-block;
+    width: 0.58em;
+    height: 1.05em;
+    margin-left: 0.12em;
+    transform: translateY(0.12em);
+    background: var(--color-mint);
+    animation: caret-blink 1.05s steps(2, jump-none) infinite;
+  }
+
+  /* terminal stage chrome */
+  .term {
+    background: var(--color-field);
+    border: 1px solid var(--color-hairline);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .term__bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-terminal-top);
+    background: color-mix(in srgb, var(--color-elevated) 70%, transparent);
+  }
+  .term__dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #2a2a2a;
+  }
+
+  /* copy-button state swap (driven by clipboard.ts toggling [data-copied]).
+     Display lives here, NOT as a utility, so the utilities layer can't win. */
+  .copy-idle {
+    display: inline-flex;
+    align-items: center;
+  }
+  .copy-done {
+    display: none;
+    align-items: center;
+  }
+  [data-copied] .copy-idle {
+    display: none;
+  }
+  [data-copied] .copy-done {
+    display: inline-flex;
+  }
+  .copy-btn[data-copied] {
+    border-color: color-mix(in srgb, var(--color-mint) 50%, transparent);
+    color: var(--color-mint);
+  }
+  .install-cta[data-copied] {
+    border-color: color-mix(in srgb, var(--color-mint) 80%, transparent);
+    background: color-mix(in srgb, var(--color-mint) 9%, transparent);
+  }
+}
+
+/* ── keyframes ──────────────────────────────────────────────── */
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* hero load stagger - applied via inline animation-delay */
+.reveal {
+  opacity: 0;
+  animation: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+/* ── reduced motion: settle everything to final state ───────── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .caret {
+    animation: none;
+  }
+  .reveal {
+    opacity: 1;
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,41 @@
+---
+const GITHUB = "https://github.com/jassuwu/mojify";
+const links = [
+  { href: "#demo", label: "demo" },
+  { href: "#install", label: "install" },
+];
+---
+
+<header class="sticky top-0 z-50">
+  <nav
+    aria-label="Primary"
+    class="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-6"
+  >
+    <a href="#top" class="flex items-baseline" aria-label="mojify, home">
+      <span
+        class="font-display text-[19px] font-extrabold leading-none tracking-tight text-mint"
+        >mojify</span
+      >
+      <span class="caret" aria-hidden="true"></span>
+    </a>
+
+    <div class="t-mono hidden items-center gap-7 text-prompt md:flex">
+      {
+        links.map((l) => (
+          <a href={l.href} class="transition-colors hover:text-mint">
+            {l.label}
+          </a>
+        ))
+      }
+    </div>
+
+    <a
+      href={GITHUB}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="t-mono inline-flex items-center gap-1 rounded-md border border-hairline px-3 py-1.5 text-offwhite/80 transition-colors hover:border-mint/50 hover:text-mint"
+    >
+      github <span aria-hidden="true" class="text-prompt">↗</span>
+    </a>
+  </nav>
+</header>

@@ -82,23 +82,29 @@ function applySgr(state: SgrState, params: number[]): void {
   }
 }
 
-function spanOpen(state: SgrState): string {
+/** The inner `style` attribute value for a state, or "" when no styling. */
+function styleOf(state: SgrState): string {
   const styles: string[] = [];
   if (state.fg) styles.push(`color:rgb(${state.fg})`);
   if (state.bold) styles.push("font-weight:700");
-  if (!styles.length) return "<span>";
-  return `<span style="${styles.join(";")}">`;
+  return styles.join(";");
 }
 
 /**
  * Convert a string containing ANSI SGR escapes into an HTML string of
  * <span>-wrapped, HTML-escaped runs. Newlines are preserved literally (the
  * caller wraps the result in a <pre>).
+ *
+ * Consecutive runs that resolve to the same style share one <span> - a colored
+ * char-art frame sets a truecolor code before every glyph, so without this the
+ * output would be one span per cell (thousands). Coalescing keeps the markup
+ * proportional to the number of color *changes*, not characters.
  */
 export function ansiToHtml(input: string): string {
   const state: SgrState = { fg: null, bold: false };
   let out = "";
   let open = false;
+  let openStyle = "";
   let i = 0;
 
   const closeIfOpen = () => {
@@ -121,7 +127,6 @@ export function ansiToHtml(input: string): string {
       if (final === "m") {
         const params =
           nums === "" ? [0] : nums.split(";").map((n) => Number(n) || 0);
-        closeIfOpen();
         applySgr(state, params);
         i = j + 1;
         continue;
@@ -138,9 +143,13 @@ export function ansiToHtml(input: string): string {
       i += 1;
     }
     if (run) {
-      closeIfOpen();
-      out += spanOpen(state);
-      open = true;
+      const style = styleOf(state);
+      if (!open || style !== openStyle) {
+        closeIfOpen();
+        out += style ? `<span style="${style}">` : "<span>";
+        open = true;
+        openStyle = style;
+      }
       out += escapeHtml(run);
     }
   }

@@ -47,6 +47,15 @@
   font-display: swap;
   src: url("/fonts/jetbrains-mono-800.woff2") format("woff2");
 }
+/* the exact IBM BIOS font Mojify draws its character art with, so the copyable
+   .ansi demo renders identically to a real PNG export */
+@font-face {
+  font-family: "Mx437";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/mx437-ibm-bios.woff2") format("woff2");
+}
 
 /* ── ambient character-art background ───────────────────────── */
 .bg-ambient {

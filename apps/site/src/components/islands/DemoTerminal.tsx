@@ -1,5 +1,55 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { commands, tokenize, type TokenKind } from "../../lib/commands";
+
+/**
+ * Renders Mojify's .ansi character frame (truecolor SGR escapes parsed to
+ * colored <span>s at build time) in the same IBM BIOS font Mojify draws its
+ * exports with (square 8x8 cells), then scales it to fill the panel like the
+ * other format demos. The characters are real, selectable text.
+ */
+function AnsiArt({ html }: { html: string }) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const preRef = useRef<HTMLPreElement>(null);
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    const pre = preRef.current;
+    if (!box || !pre) return;
+    const fit = () => {
+      // offsetWidth/Height are the unscaled layout size (transforms don't affect
+      // them), so the cover ratio is always measured against the real grid.
+      const pw = pre.offsetWidth;
+      const ph = pre.offsetHeight;
+      if (!pw || !ph) return;
+      const s = Math.max(box.clientWidth / pw, box.clientHeight / ph); // cover
+      // translate(-50%,-50%) anchors the pre's center on the box center, which
+      // stays correct even while it overflows (a plain grid-center would shove an
+      // overflowing child to a corner).
+      pre.style.transform = `translate(-50%, -50%) scale(${s})`;
+    };
+    fit();
+    // observe the box (panel resizes) AND the pre (its layout size jumps when the
+    // IBM font finishes loading) so the fit is always correct, no timing flash.
+    const ro = new ResizeObserver(fit);
+    ro.observe(box);
+    ro.observe(pre);
+    document.fonts?.ready.then(fit);
+    return () => ro.disconnect();
+  }, [html]);
+  return (
+    <div ref={boxRef} className="relative h-full w-full overflow-hidden">
+      <pre
+        ref={preRef}
+        className="absolute left-1/2 top-1/2 m-0 whitespace-pre text-offwhite"
+        // Mx437 is a square bitmap face: one glyph advances exactly 1em and the
+        // line box is 1em tall, so cells are already square (the 8x8 grid Mojify
+        // draws its own exports with). No letter-spacing needed.
+        style={{ fontFamily: '"Mx437", monospace', fontSize: "12px", lineHeight: 1, letterSpacing: 0, transformOrigin: "center", transform: "translate(-50%, -50%)" }}
+        aria-hidden="true"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
+  );
+}
 
 interface Props {
   probeHtml: string;
@@ -17,10 +67,10 @@ const RECIPES = [
 ];
 
 const FORMATS = [
-  { key: "video", label: ".mp4", kind: "video", note: "keeps source audio", src: "/assets/recipes/default.mp4", poster: "/assets/recipes/default-poster.webp", cmd: commands.exportVideo },
-  { key: "gif", label: ".gif", kind: "video", note: "no audio", src: "/assets/recipes/default.mp4", poster: "/assets/recipes/default-poster.webp", cmd: commands.exportGif },
-  { key: "image", label: ".png", kind: "image", note: "one frame", src: "/assets/recipes/default-poster.webp", cmd: commands.exportImage },
-  { key: "text", label: ".ansi", kind: "text", note: "real, selectable text", cmd: commands.exportText },
+  { key: "video", label: ".mp4", kind: "video", note: "keeps source audio", src: "/assets/export/spirited.mp4", poster: "/assets/export/spirited-poster.webp", cmd: commands.exportVideo },
+  { key: "gif", label: ".gif", kind: "video", note: "no audio", src: "/assets/export/spirited.mp4", poster: "/assets/export/spirited-poster.webp", cmd: commands.exportGif },
+  { key: "image", label: ".png", kind: "image", note: "one frame", src: "/assets/export/spirited-poster.webp", cmd: commands.exportImage },
+  { key: "ansi", label: ".ansi", kind: "ansi", note: "truecolor, selectable text", cmd: commands.exportAnsi },
 ];
 
 const TABS: { key: TabKey; desc: string }[] = [
@@ -113,10 +163,8 @@ export default function DemoTerminal({ probeHtml, doctorHtml, ansiHtml }: Props)
         <>
           {f.kind === "video" && <Video src={f.src!} poster={f.poster!} label={`Output exported to ${f.label}.`} />}
           {f.kind === "image" && <img src={f.src!} alt={`Output exported to ${f.label}.`} className="h-full w-full object-cover" />}
-          {f.kind === "text" && (
-            <div className="grid h-full w-full place-items-center overflow-hidden p-3">
-              <pre className="t-mono-grid leading-none" aria-hidden="true" dangerouslySetInnerHTML={{ __html: ansiHtml }} />
-            </div>
+          {f.kind === "ansi" && (
+            <AnsiArt html={ansiHtml} />
           )}
           <span className="t-mono absolute right-3 top-3 rounded-md bg-field/70 px-2 py-1 text-prompt backdrop-blur-sm">
             {f.label} · {f.note}

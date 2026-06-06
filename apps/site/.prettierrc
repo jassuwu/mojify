@@ -1,0 +1,7 @@
+{
+  "useTabs": false,
+  "tabWidth": 2,
+  "bracketSpacing": true,
+  "plugins": ["prettier-plugin-astro"],
+  "overrides": [{ "files": "*.astro", "options": { "parser": "astro" } }]
+}

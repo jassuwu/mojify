@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mojify.dev/sitemap-index.xml

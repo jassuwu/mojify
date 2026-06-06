@@ -1,0 +1,19 @@
+# build output
+dist/
+
+# generated astro types
+.astro/
+
+# dependencies
+node_modules/
+
+# deploy
+.vercel/
+
+# misc
+.DS_Store
+.env
+.env.production
+
+# local visual-QA screenshots
+.shots/

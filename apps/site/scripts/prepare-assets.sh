@@ -10,6 +10,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 OUT="$ROOT/apps/site/public/assets"
+DATA="$ROOT/apps/site/src/data"
 DIST="$ROOT/dist"
 MOJIFY="$ROOT/bin/mojify"
 
@@ -42,6 +43,43 @@ for name in default mono ascii blocks; do
     echo "  ! missing $src (skipped $name)"
   fi
 done
+
+echo "→ export demo (one bright, full-frame still through every output format)"
+# The export tab needs a source that fills the frame so all four formats read well,
+# the .ansi/.txt one especially (the redeyes recipe art is mostly black, which
+# re-converts to near-empty text). A single colorful still drives all four:
+#   .mp4/.gif  a gentle zoom of the still, run through Mojify as char-art
+#   .png       the still's char-art, one frame
+#   .ansi      the same frame as truecolor, selectable text
+ES="$DIST/spirited.png"
+if [[ -f "$ES" && -x "$MOJIFY" ]]; then
+  mkdir -p "$OUT/export"
+  # gentle Ken Burns zoom (upscaled first so it stays crisp) -> char-art mp4 -> web mp4
+  magick "$ES" -resize 2560x -filter Lanczos "$DIST/spirited-big.png"
+  ffmpeg -y -loglevel error -loop 1 -i "$DIST/spirited-big.png" \
+    -vf "zoompan=z='min(zoom+0.0006,1.18)':d=144:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1280x720:fps=24,format=yuv420p" \
+    -t 6 -c:v libx264 -crf 18 "$DIST/spirited-zoom.mp4"
+  "$MOJIFY" export --overwrite --recipe default --width 900 "$DIST/spirited-zoom.mp4" "$DIST/spirited-charart.mp4"
+  mp4 "$DIST/spirited-charart.mp4" "$OUT/export/spirited.mp4" 900
+  # poster = the char-art video's first frame (zoom 1.0), so it matches the .ansi framing
+  ffmpeg -y -loglevel error -i "$OUT/export/spirited.mp4" -frames:v 1 "$DIST/spirited-poster.png"
+  poster "$DIST/spirited-poster.png" "$OUT/export/spirited-poster.webp" 900
+  # .ansi: native-ish 130 cols, then round truecolor values to a step of 40 so the
+  # build-time ANSI->HTML collapses neighbouring cells into shared spans (the raw
+  # output sets a color before every glyph, which would be one span per cell).
+  "$MOJIFY" export --overwrite --recipe default --width 130 "$ES" "$DIST/spirited.ansi"
+  python3 - "$DIST/spirited.ansi" "$DATA/export-frame.ansi" 40 <<'PY'
+import re, sys
+src, dst, step = sys.argv[1], sys.argv[2], int(sys.argv[3])
+data = open(src, encoding="utf-8", errors="replace").read()
+def q(m):
+    f = lambda v: min(255, (int(v) + step // 2) // step * step)
+    return f"\x1b[38;2;{f(m[1])};{f(m[2])};{f(m[3])}m"
+open(dst, "w").write(re.sub(r"\x1b\[38;2;(\d+);(\d+);(\d+)m", q, data))
+PY
+else
+  echo "  ! missing $ES or $MOJIFY (skipped export demo)"
+fi
 
 echo "→ ambient background (an abstract clip, run through Mojify as mono char-art)"
 SRC="$DIST/transitions1.mp4"

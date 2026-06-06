@@ -109,7 +109,7 @@ export const commands = {
   exportVideo: cmd("exportVideo", "mojify export intro.mp4 clip.mp4"),
   exportGif: cmd("exportGif", "mojify export intro.mp4 clip.gif"),
   exportImage: cmd("exportImage", "mojify export poster.png frame.png"),
-  exportText: cmd("exportText", "mojify export poster.png frame.ansi"),
+  exportAnsi: cmd("exportAnsi", "mojify export poster.png frame.ansi"),
 } satisfies Record<string, Command>;
 
 export type CommandId = keyof typeof commands;

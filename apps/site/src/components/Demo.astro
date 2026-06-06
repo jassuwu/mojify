@@ -1,10 +1,10 @@
 ---
 import DemoTerminal from "./islands/DemoTerminal.tsx";
-import { ansiToHtml } from "../lib/ansi";
 import { doctorHtml, probeHtml } from "../lib/cliText";
+import { ansiToHtml } from "../lib/ansi";
 import doctorText from "../data/doctor.txt?raw";
 import probeText from "../data/probe.txt?raw";
-import frameSm from "../data/frame-sm.ansi?raw";
+import frameAnsi from "../data/export-frame.ansi?raw";
 ---
 
 <section
@@ -21,6 +21,6 @@ import frameSm from "../data/frame-sm.ansi?raw";
     client:visible
     probeHtml={probeHtml(probeText)}
     doctorHtml={doctorHtml(doctorText)}
-    ansiHtml={ansiToHtml(frameSm.replace(/\n+$/, ""))}
+    ansiHtml={ansiToHtml(frameAnsi.replace(/\n+$/, ""))}
   />
 </section>

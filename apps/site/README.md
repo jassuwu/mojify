@@ -1,0 +1,65 @@
+# @mojify/site
+
+A small static showcase site for the Mojify CLI. It explains what the tool does
+and points people at `brew install jassuwu/tap/mojify`.
+
+It is a static site only. No hosted converter, no upload, no backend. The page
+is four parts: a minimal hero over an animated character-art background, one
+interactive terminal that demos every command, an install block, and a footer.
+The `probe`, `doctor`, and `.ansi` output shown in the demo is Mojify's real,
+captured output, parsed to selectable DOM at build time (not screenshots).
+
+## Stack
+
+- **Astro** (static output to `dist/`), **React 19** (one island), **Tailwind v4** (`@tailwindcss/vite`).
+- Brand tokens (`--field #080808`, `--mint #7cffc6`, `--prompt #8a99ad`, `--offwhite #e8f3ee`)
+  live in `src/styles/global.css` `@theme`, inherited from `apps/readme-header`.
+- Display and body type is self-hosted **JetBrains Mono** (latin, `public/fonts/`), system mono fallback.
+- The demo terminal (`src/components/islands/DemoTerminal.tsx`) is the only React island.
+  Everything else is static Astro plus small vanilla scripts (`src/scripts/`): clipboard,
+  reduced-motion lazy video.
+
+## Scripts
+
+```bash
+bun run dev        # astro dev
+bun run build      # astro build -> dist/
+bun run preview    # serve the build
+bun run typecheck  # astro check
+bun run test       # bun test (command-accuracy unit tests)
+bun run check      # build-output guardrail (run after build)
+bun run assets     # rebuild web assets from Mojify output (ffmpeg + magick)
+```
+
+## Accuracy + copy guardrails
+
+The page must only claim what Mojify actually does (no WebP export, no emoji output,
+no web converter, no native Windows), and the copy must stay human (no em-dashes, no
+marketing buzzwords). Two checks enforce this:
+
+- `src/lib/commands.ts` is the single source of truth for every CLI string shown.
+  `src/lib/commands.test.ts` asserts the tokenizer never alters a command.
+- `scripts/check-content.mjs` scans the built `dist/index.html`: every command must
+  match `commands.ts`, required copy must be present, and forbidden claims, em/en
+  dashes, and buzzwords must be absent. The build is wired so this runs in `bun run check`.
+
+## Assets
+
+`bun run assets` (`scripts/prepare-assets.sh`) rebuilds two committed asset sets from
+Mojify's own output (their sources are gitignored and not reproducible in CI):
+
+- `public/assets/recipes/*` the four recipe clips in the demo (from `dist/redeyes*.gif`).
+- `public/assets/bg/*` the ambient background: an abstract clip run through
+  `mojify export --recipe mono` at high width, kept crisp (no blur) so the characters
+  read as text, not pixels.
+
+The `probe`/`doctor`/`.ansi` text shown in the demo lives in `src/data/` and is parsed
+to colored DOM at build time. Requires `ffmpeg` and ImageMagick (`magick`).
+
+## Notes
+
+- `astro.config.mjs` `site` and `robots.txt`/sitemap use a placeholder domain. Set the
+  real one before launch. Deploy is static (`vercel.json` included).
+- The recipe clips in the demo are pre-rendered; the design spec
+  (`docs/superpowers/specs/2026-06-05-mojify-marketing-site-design.md`) records the
+  earlier, larger "premium cinema" direction this site was pared back from.

@@ -1,0 +1,35 @@
+---
+const GITHUB = "https://github.com/jassuwu/mojify";
+const RELEASES = "https://github.com/jassuwu/mojify/releases";
+---
+
+<footer class="relative z-20 border-t border-hairline">
+  <div
+    class="t-mono mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-4 px-6 py-10 text-prompt sm:flex-row"
+  >
+    <p class="flex items-center gap-2">
+      <span class="font-display font-extrabold tracking-tight text-mint">mojify</span>
+      <span class="text-prompt">·</span>
+      <span>media-to-text</span>
+      <span class="text-prompt">·</span>
+      <span>MIT</span>
+      <span class="caret" aria-hidden="true"></span>
+    </p>
+    <nav aria-label="Footer" class="flex items-center gap-5">
+      <span class="text-prompt">made with ffmpeg + yt-dlp</span>
+      <a
+        href={GITHUB}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="transition-colors hover:text-mint">github <span aria-hidden="true">↗</span></a
+      >
+      <a
+        href={RELEASES}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="transition-colors hover:text-mint"
+        >releases <span aria-hidden="true">↗</span></a
+      >
+    </nav>
+  </div>
+</footer>

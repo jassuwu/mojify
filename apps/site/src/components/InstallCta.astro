@@ -1,0 +1,56 @@
+---
+interface Props {
+  value: string;
+  full?: boolean;
+  class?: string;
+}
+
+const { value, full = false, class: className = "" } = Astro.props;
+---
+
+<button
+  type="button"
+  data-copy={value}
+  aria-label={`Copy install command: ${value}`}
+  class={`install-cta group inline-flex items-center justify-between gap-4 rounded-xl border border-mint/45 bg-mint/[0.04] px-4 py-3 text-left transition-colors duration-200 hover:border-mint/80 hover:bg-mint/[0.09] ${full ? "w-full" : ""} ${className}`}
+>
+  <span class="t-mono-cmd min-w-0 truncate">
+    <span class="mr-2 select-none text-prompt">$</span>
+    <slot />
+  </span>
+  <span
+    class="t-mono inline-flex shrink-0 items-center gap-1.5 text-mint"
+    aria-hidden="true"
+  >
+    <span class="copy-idle gap-1.5">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+        <path d="M5 15V5a2 2 0 0 1 2-2h10"></path>
+      </svg>
+    </span>
+    <span class="copy-done gap-1.5">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M20 6 9 17l-5-5"></path>
+      </svg>
+    </span>
+  </span>
+  <span data-live class="sr-only" aria-live="polite"></span>
+</button>

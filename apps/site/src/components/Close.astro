@@ -1,0 +1,26 @@
+---
+import InstallCta from "./InstallCta.astro";
+import { commands } from "../lib/commands";
+
+const install = commands.install;
+---
+
+<section
+  id="install"
+  class="relative z-20 scroll-mt-20 border-t border-hairline px-6 py-[clamp(72px,11vh,140px)] text-center"
+>
+  <p class="t-display-l text-offwhite">
+    turn media into <span class="text-mint">text</span>.
+  </p>
+  <div class="mx-auto mt-9 max-w-md">
+    <InstallCta value={install.raw} full>
+      <span class="font-bold text-mint">brew</span>{" "}
+      <span class="text-mint">install</span>{" "}
+      <span class="text-offwhite/80">jassuwu/tap/mojify</span>
+    </InstallCta>
+  </div>
+  <p class="t-caption mx-auto mt-3 max-w-md">
+    <span class="text-mint">mojify doctor</span> checks for missing tools. macOS and
+    linux. windows needs wsl.
+  </p>
+</section>

@@ -1,0 +1,26 @@
+---
+import DemoTerminal from "./islands/DemoTerminal.tsx";
+import { ansiToHtml } from "../lib/ansi";
+import { doctorHtml, probeHtml } from "../lib/cliText";
+import doctorText from "../data/doctor.txt?raw";
+import probeText from "../data/probe.txt?raw";
+import frameSm from "../data/frame-sm.ansi?raw";
+---
+
+<section
+  id="demo"
+  class="relative mx-auto max-w-[1100px] scroll-mt-20 px-6 py-[clamp(80px,12vh,160px)]"
+>
+  <header class="mb-10">
+    <h2 class="t-display-l text-offwhite">
+      run it<span class="text-mint">.</span>
+    </h2>
+  </header>
+
+  <DemoTerminal
+    client:visible
+    probeHtml={probeHtml(probeText)}
+    doctorHtml={doctorHtml(doctorText)}
+    ansiHtml={ansiToHtml(frameSm.replace(/\n+$/, ""))}
+  />
+</section>

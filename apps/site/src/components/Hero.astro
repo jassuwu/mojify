@@ -1,0 +1,59 @@
+---
+import InstallCta from "./InstallCta.astro";
+import { commands } from "../lib/commands";
+
+const install = commands.install;
+const GITHUB = "https://github.com/jassuwu/mojify";
+---
+
+<section
+  id="top"
+  class="relative flex min-h-[90svh] items-center justify-center px-6 py-24 text-center"
+>
+  <div class="w-full max-w-2xl">
+    <h1 class="t-display-xl reveal text-mint" style="animation-delay:0.04s">
+      mojify
+    </h1>
+    <p class="t-tagline reveal mt-5 text-offwhite" style="animation-delay:0.08s">
+      turn media into <span class="text-mint">text</span>.
+    </p>
+    <p
+      class="t-body reveal mx-auto mt-6 max-w-lg text-pretty text-offwhite/70"
+      style="animation-delay:0.12s"
+    >
+      plays videos in your terminal as colored text. exports to video, gif,
+      image, or text files.
+    </p>
+
+    <div
+      class="reveal mt-11 flex flex-col items-center gap-5"
+      style="animation-delay:0.18s"
+    >
+      <InstallCta value={install.raw} class="w-full max-w-md">
+        <span class="font-bold text-mint">brew</span>{" "}
+        <span class="text-mint">install</span>{" "}
+        <span class="text-offwhite/80">jassuwu/tap/mojify</span>
+      </InstallCta>
+      <div class="t-mono flex items-center gap-6">
+        <a
+          href="#demo"
+          class="inline-flex items-center gap-2 text-offwhite/80 transition-colors hover:text-mint"
+        >
+          see it run <span aria-hidden="true" class="text-mint">↓</span>
+        </a>
+        <a
+          href={GITHUB}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1 text-prompt transition-colors hover:text-mint"
+        >
+          github <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+      <p class="t-caption">
+        macOS and linux. windows needs wsl. install with homebrew or a github
+        release.
+      </p>
+    </div>
+  </div>
+</section>
